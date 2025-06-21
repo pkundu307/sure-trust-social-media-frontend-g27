@@ -1,6 +1,7 @@
 
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './App.css'
+import Login from './components/Login'
 
 function App() {
 
@@ -11,9 +12,7 @@ function App() {
       <Route
         path="/"
         element={
-          <div>
-            <h1>Welcome to the Home Page</h1>
-          </div>
+               <Login/>
         }/>
     </Routes>
     </BrowserRouter>
