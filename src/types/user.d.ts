@@ -8,3 +8,10 @@ export interface User {
   createdAt: Date;
   updatedAt: Date;
 }
+export interface IUser{
+  _id: string;
+  name: string;
+  email: string;
+  bio?: string;
+  profilePicture?: string;
+}
