@@ -3,6 +3,8 @@ import {api} from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+   
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
@@ -16,7 +18,10 @@ const Login = () => {
     try {
       const res = await api.post('/auth/login', { email, password });
       localStorage.setItem('token', res.data.token);
+      localStorage.setItem('loginTime', new Date().toISOString());
       navigate('/home');
+      //refresh the page to show the new token
+        window.location.reload();
     } catch (err) {
         console.error(err);
       alert('Login failed');

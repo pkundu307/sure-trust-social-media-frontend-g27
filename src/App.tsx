@@ -4,11 +4,13 @@ import Login from "./components/Login";
 import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
+import Friends from "./pages/Friends";
 
 function App() {
+    
   const token = localStorage.getItem("token");
   console.log(token?.length);
-  
+
   return (
     <>
      
@@ -18,6 +20,7 @@ function App() {
           <Route path="/" element={<Login />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/home" element={<Home />} />
+          <Route path='/friends' element={<Friends/>}/>
         </Routes>
       </BrowserRouter>
     </>

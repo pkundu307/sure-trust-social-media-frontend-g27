@@ -3,11 +3,12 @@ import {api} from '../api/axios';
 import type{ IPost } from '../types/post';
 import LeftSidebar from '../components/LeftSidebar';
 import RightSidebar from '../components/RightSideBar';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState('');
-
+    const navigate = useNavigate();
   useEffect(() => {
     api.get('/post/all')
       .then((res) => setPosts(res.data))
@@ -24,7 +25,26 @@ const Home = () => {
       alert('Failed to create post');
     }
   };
-
+  useEffect(() => {
+    const loginTime = localStorage.getItem("loginTime");
+    if (loginTime) {
+      const currentTime = new Date();
+      const loginDate = new Date(loginTime);
+      const timeDifference = currentTime.getTime() - loginDate.getTime();
+      const minutesDifference = Math.floor(timeDifference / (1000 * 60));
+      if (minutesDifference > 60) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("loginTime");
+        handleLogout()      
+          alert("Session expired. Please log in again.");
+      }
+    }
+  }, []);
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("loginTime");
+    navigate("/");
+  }
   return (
     <>
       
