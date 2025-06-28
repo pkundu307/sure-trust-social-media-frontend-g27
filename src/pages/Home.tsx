@@ -4,10 +4,14 @@ import type{ IPost } from '../types/post';
 import LeftSidebar from '../components/LeftSidebar';
 import RightSidebar from '../components/RightSideBar';
 import { useNavigate } from 'react-router-dom';
+import { likeOrUnlikePost } from '../api/commonApis';
 
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState('');
+  const [displayLikePopup, setDisplayLikePopup] = useState(false);
+
+
     const navigate = useNavigate();
   useEffect(() => {
     api.get('/post/all')
@@ -44,6 +48,14 @@ const Home = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("loginTime");
     navigate("/");
+  }
+
+    function handleLike(postId: string) {
+      likeOrUnlikePost(postId);
+    }
+
+  const displayLikes = () => {
+    setDisplayLikePopup(!displayLikePopup);
   }
   return (
     <>
@@ -93,6 +105,39 @@ const Home = () => {
               <div className="text-sm text-gray-500 mt-1">
                 {new Date(post.createdAt).toLocaleString()}
               </div>
+              <div className="flex space-x-6">
+                    <div className="mt-2">
+                      <button className="bg-blue-500 text-white font-bold rounded px-3 py-1 mr-2"
+                      onClick={() => handleLike(post._id)}
+                      >
+                        👍
+                      </button>
+                      <span className="font-semibold" onClick={displayLikes}>
+                        {post.likes.length}{" "}
+                        {post.likes.length > 1 ? "Likes" : "Like"}{" "}
+                        {displayLikePopup && (
+                          <div className="absolute bg-white shadow-lg rounded p-4 mt-2">
+                            <button onClick={()=>{displayLikes(); console.log(displayLikePopup)}}>❌</button>
+                            <h3 className="font-bold mb-2">Liked by:</h3>
+                            <ul>
+                              {/* some dummy data} */}
+                              <p>john</p>
+                              <p>gary</p>
+                              </ul>
+                          </div>
+                        )}
+                      </span>
+                    </div>
+                    <div className="mt-2">
+                      <button className="bg-purple-500 text-white font-bold rounded px-3 py-1 mr-2">
+                        💬
+                      </button>
+                      <span className="font-semibold">
+                        {post.comments.length}{" "}
+                        {post.comments.length > 1 ? "Comments" : "Comment"}{" "}
+                      </span>
+                    </div>
+                  </div>
             </div>
           ))}
         </div>
