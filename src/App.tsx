@@ -5,6 +5,7 @@ import Profile from "./pages/Profile";
 import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
 import Friends from "./pages/Friends";
+import FriendProfile from "./pages/FriendProfile";
 
 function App() {
     
@@ -21,6 +22,7 @@ function App() {
           <Route path="/profile" element={<Profile />} />
           <Route path="/home" element={<Home />} />
           <Route path='/friends' element={<Friends/>}/>
+          <Route path="/profile/:id" element={<FriendProfile />} />
         </Routes>
       </BrowserRouter>
     </>
