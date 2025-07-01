@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Navbar from "./components/Navbar";
 import Friends from "./pages/Friends";
 import FriendProfile from "./pages/FriendProfile";
+import ChatPopUp from "./components/ChatPopUp";
 
 function App() {
     
@@ -25,6 +26,7 @@ function App() {
           <Route path="/profile/:id" element={<FriendProfile />} />
         </Routes>
       </BrowserRouter>
+      <ChatPopUp/>
     </>
   );
 }
