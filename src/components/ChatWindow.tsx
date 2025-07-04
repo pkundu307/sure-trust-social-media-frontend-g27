@@ -22,6 +22,7 @@ const socket: Socket = io("http://localhost:3000");
 
 const ChatWindow = ({ onClose }: { onClose: () => void }) => {
   const [friends, setFriends] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
@@ -117,6 +118,21 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
     setText("");
   };
 
+  useEffect(() => {
+    if(selectedUser){
+      setIsLoading(false);
+      setMessages([]);
+
+      api.get(`/chat/${selectedUser._id}`)
+      .then((res) => {
+        setMessages(res.data);
+      })
+      .catch(() => {
+        alert("Failed to load messages.");
+        setMessages([]); // Clear messages on failure
+      }
+    );
+    }}, [selectedUser]);
   return (
     <div className="w-[320px] h-[400px] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col z-50">
       <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
