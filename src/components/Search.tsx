@@ -25,7 +25,7 @@ const handleFriendSearch = async () => {
     }
 }
     return (
-    <div className="flex flex-col items-center bg-cyan-900 p-2">
+    <div className="bg-gray-100 rounded-2xl p-1">
       <input type="text" placeholder="Search" value={query} onChange={(e)=>setQuery(e.target.value)}/>
       <button onClick={handleFriendSearch}>🔍</button>
 
