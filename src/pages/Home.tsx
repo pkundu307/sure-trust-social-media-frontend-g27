@@ -5,7 +5,7 @@ import LeftSidebar from '../components/LeftSidebar';
 import RightSidebar from '../components/RightSideBar';
 import { useNavigate } from 'react-router-dom';
 import { likeOrUnlikePost } from '../api/commonApis';
-
+import { socket } from '../api/commonApis';
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState('');
@@ -13,11 +13,24 @@ const Home = () => {
 
 
     const navigate = useNavigate();
-  useEffect(() => {
-    api.get('/post/all')
-      .then((res) => setPosts(res.data))
-      .catch(() => alert('Failed to load posts'));
-  }, []);
+ useEffect(() => {
+  api.get('/post/all')
+    .then((res) => setPosts(res.data))
+    .catch(() => alert('Failed to load posts'));
+
+  // ✅ Subscribe to post like updates
+  socket.on("post_liked", ({ postId, likes }) => {
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post._id === postId ? { ...post, likes } : post
+      )
+    );
+  });
+
+  return () => {
+    socket.off("post_liked"); // 🔁 clean up listener
+  };
+}, []);
 
   const handlePost = async () => {
     if (!text.trim()) return;
@@ -50,8 +63,12 @@ const Home = () => {
     navigate("/");
   }
 
-    function handleLike(postId: string) {
-      likeOrUnlikePost(postId);
+    const handleLike=async(postId: string)=> {
+      try {
+        await likeOrUnlikePost(postId)
+      } catch (error) {
+        console.log("error")
+      }
     }
 
   const displayLikes = () => {
