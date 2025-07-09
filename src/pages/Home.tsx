@@ -6,6 +6,9 @@ import RightSidebar from '../components/RightSideBar';
 import { useNavigate } from 'react-router-dom';
 import { likeOrUnlikePost } from '../api/commonApis';
 import { socket } from '../api/commonApis';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState('');
@@ -70,6 +73,24 @@ const Home = () => {
         console.log("error")
       }
     }
+    const handleDeletePost = async (postId: string) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this post?");
+  if (!confirmDelete) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    await api.delete(`/post/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    toast.success("Post deleted successfully ✅");
+    setPosts((prevPosts) => prevPosts.filter((p) => p._id !== postId));
+  } catch (error) {
+    toast.error("Failed to delete post ❌");
+  }
+};
+
 
   const displayLikes = () => {
     setDisplayLikePopup(!displayLikePopup);
@@ -154,6 +175,14 @@ const Home = () => {
                         {post.comments.length > 1 ? "Comments" : "Comment"}{" "}
                       </span>
                     </div>
+                     <div className="mt-2">
+        <button
+      onClick={() => handleDeletePost(post._id)}
+      className="bg-red-600 text-white font-bold rounded px-3 py-1"
+    >
+      🗑️ Delete
+    </button>
+  </div>
                   </div>
             </div>
           ))}

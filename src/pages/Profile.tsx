@@ -4,6 +4,8 @@ import type { IUser } from "../types/user";
 import type { Friend } from "../types/Friends";
 import type { IPost } from "../types/post";
 import { likeOrUnlikePost } from "../api/commonApis";
+import { toast } from "react-toastify";
+
 
 const Profile = () => {
   const [user, setUser] = useState<IUser | null>(null);
@@ -32,6 +34,23 @@ const Profile = () => {
         alert("Failed to fetch user data");
       });
   }, []);
+const handleDeletePost = async (postId: string) => {
+  const confirmDelete = window.confirm("Are you sure you want to delete this post?");
+  if (!confirmDelete) return;
+
+  try {
+    const token = localStorage.getItem("token");
+    await api.delete(`/post/${postId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    toast.success("Post deleted successfully ✅");
+    setPosts((prevPosts) => prevPosts.filter((p) => p._id !== postId));
+  } catch (error) {
+    toast.error("Failed to delete post ❌");
+  }
+};
 
   function handleLike(postId: string) {
     likeOrUnlikePost(postId);
@@ -119,6 +138,15 @@ const Profile = () => {
                         {post.comments.length > 1 ? "Comments" : "Comment"}{" "}
                       </span>
                     </div>
+                    <div className="mt-2">
+  <button
+    onClick={() => handleDeletePost(post._id)}
+    className="bg-red-600 text-white font-bold rounded px-3 py-1"
+  >
+    🗑️ Delete
+  </button>
+</div>
+
                   </div>
                 </div>
               ))}
