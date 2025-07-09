@@ -12,7 +12,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState('');
-  const [displayLikePopup, setDisplayLikePopup] = useState(false);
+  const [displayLikePopup,setDisplayLikePopup] = useState(false);
 
 
     const navigate = useNavigate();
