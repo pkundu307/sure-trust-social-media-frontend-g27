@@ -7,11 +7,16 @@ import { useNavigate } from "react-router-dom";
 import { likeOrUnlikePost } from "../api/commonApis";
 import { socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
+import axios from "axios";
+
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState("");
   const [displayLikePopup, setDisplayLikePopup] = useState(false);
-
+const [file, setFile] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [res, setRes] = useState({});
+  const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
   useEffect(() => {
     api
@@ -41,6 +46,21 @@ const Home = () => {
       setText("");
     } catch {
       alert("Failed to create post");
+    }
+  };
+
+   const handleUpload = async () => {
+    try {
+      setLoading(true);
+      const data = new FormData();
+      data.append("my_file", file);
+      data.append("text",text)
+      const res = await axios.post("http://localhost:3000/upload", data);
+      setRes(res.data);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
     }
   };
   useEffect(() => {
@@ -104,8 +124,38 @@ const Home = () => {
                 onChange={(e) => setText(e.target.value)}
                 placeholder="What's on your mind"
               />
-               <div ><FaImage size={30}/><input type="file" /></div>
-              <button
+  <div className="App">
+      <label htmlFor="file" className="btn-grey">
+        {" "}
+        select file
+      </label>
+      {file && <center> {file.name}</center>}
+      <input
+        id="file"
+        type="file"
+        onChange={handleSelectFile}
+        multiple={false}
+      />
+      <code>
+        {Object.keys(res).length > 0
+          ? Object.keys(res).map((key) => (
+              <p className="output-item" key={key}>
+                <span>{key}:</span>
+                <span>
+                  {typeof res[key] === "object" ? "object" : res[key]}
+                </span>
+              </p>
+            ))
+          : null}
+      </code>
+      {file && (
+        <>
+          <button onClick={handleUpload} className="btn-green">
+            {loading ? "uploading..." : "upload to cloudinary"}
+          </button>
+        </>
+      )}
+    </div>              <button
                 className="mt-2 bg-blue-600 px-4 py-2 text-white rounded-lg"
                 onClick={handlePost}
               >
