@@ -13,11 +13,14 @@ const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState("");
   const [displayLikePopup, setDisplayLikePopup] = useState(false);
-const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
   const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+
   useEffect(() => {
     api
       .get("/post/all")
@@ -38,6 +41,20 @@ const [file, setFile] = useState(null);
     };
   }, []);
 
+  useEffect(() => {
+  const handleClickOutside = (e: MouseEvent) => {
+    const target = e.target as HTMLElement;
+    // If clicked element is not inside any .menu-container, close it
+    if (!target.closest(".menu-container")) {
+      setOpenMenuId(null);
+    }
+  };
+
+  document.addEventListener("click", handleClickOutside);
+  return () => document.removeEventListener("click", handleClickOutside);
+}, []);
+
+
   const handlePost = async () => {
     if (!text.trim()) return;
     try {
@@ -49,12 +66,12 @@ const [file, setFile] = useState(null);
     }
   };
 
-   const handleUpload = async () => {
+  const handleUpload = async () => {
     try {
       setLoading(true);
       const data = new FormData();
       data.append("my_file", file);
-      data.append("text",text)
+      data.append("text", text);
       const res = await axios.post("http://localhost:3000/upload", data);
       setRes(res.data);
     } catch (error) {
@@ -115,80 +132,121 @@ const [file, setFile] = useState(null);
                 ))}
               </div>
             </div>
+
             {/* Create Post */}
             <div className="bg-white rounded-xl shadow p-4 mb-4">
               <textarea
-                className="w-full border border-gray-500 p-3 rounded-lg resize-none focus:ring-blue-600 "
+                className="w-full border border-gray-500 p-3 rounded-lg resize-none focus:ring-blue-600"
                 rows={3}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="What's on your mind"
               />
-  <div className="App">
-      <label htmlFor="file" className="btn-grey">
-        {" "}
-        select file
-      </label>
-      {file && <center> {file.name}</center>}
-      <input
-        id="file"
-        type="file"
-        onChange={handleSelectFile}
-        multiple={false}
-      />
-      <code>
-        {Object.keys(res).length > 0
-          ? Object.keys(res).map((key) => (
-              <p className="output-item" key={key}>
-                <span>{key}:</span>
-                <span>
-                  {typeof res[key] === "object" ? "object" : res[key]}
-                </span>
-              </p>
-            ))
-          : null}
-      </code>
-      {file && (
-        <>
-          <button onClick={handleUpload} className="btn-green">
-            {loading ? "uploading..." : "upload to cloudinary"}
-          </button>
-        </>
-      )}
-    </div>              <button
+              <div className="App">
+                <label htmlFor="file" className="btn-grey">
+                  select file
+                </label>
+                {file && <center>{file.name}</center>}
+                <input
+                  id="file"
+                  type="file"
+                  onChange={handleSelectFile}
+                  multiple={false}
+                />
+                <code>
+                  {Object.keys(res).length > 0
+                    ? Object.keys(res).map((key) => (
+                        <p className="output-item" key={key}>
+                          <span>{key}:</span>
+                          <span>
+                            {typeof res[key] === "object" ? "object" : res[key]}
+                          </span>
+                        </p>
+                      ))
+                    : null}
+                </code>
+                {file && (
+                  <>
+                    <button onClick={handleUpload} className="btn-green">
+                      {loading ? "uploading..." : "upload to cloudinary"}
+                    </button>
+                  </>
+                )}
+              </div>
+              <button
                 className="mt-2 bg-blue-600 px-4 py-2 text-white rounded-lg"
                 onClick={handlePost}
               >
                 Post
               </button>
             </div>
+
             {/* Posts */}
             {posts.map((post) => (
-              <>
-                <div
-                  className="bg-white rounded-xl shadow p-4 mb-6"
-                  key={post._id}
-                >
-                  <div className="font-bold text-lg text-gray-800">
-                    {post.user.name}
-                    <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
-                    {post.image && (<img src={post.image} className="mt-3 rounded-lg max-h-96 w-full object-cover" />)}
-                    <div className="text-sm text-gray-400 mt-2">{
-new Date(post.createdAt).toLocaleDateString()
-}
-                    </div>
-                    <div className="flex gap-6 items-center mt-4 text-sm font-medium">
-<div className="flex items-center gap-1">
+  <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
+    {post.user._id === localStorage.getItem("userId") && (
+      <div className="absolute top-4 right-4 menu-container">
+        <button
+          className="text-gray-600 text-xl font-bold"
+          onClick={(e) => {
+            e.stopPropagation(); // prevent body click from triggering close
+            setOpenMenuId((prev) => (prev === post._id ? null : post._id));
+          }}
+        >
+          ⋮
+        </button>
 
-  <button onClick={()=>handleLike(post._id)}>👍</button>
-  <span className="cursor-pointer text-gray-600" onClick={displayLikes}>{post.likes.length}{post.likes.length===1?"Like":"likes"}</span>
-</div>
+        {openMenuId === post._id && (
+          <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
+            <button
+              className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+              onClick={async () => {
+                try {
+                  await api.put(`/post/softDelete/${post._id}`);
+                  setPosts(posts.filter((p) => p._id !== post._id));
+                  alert("Post deleted successfully");
+                  setOpenMenuId(null); // close menu after deleting
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to delete post");
+                }
+              }}
+            >
+              Delete
+            </button>
+          </div>
+        )}
+      </div>
+    )}
 
-                    </div>
-                  </div>
-                </div>
-              </>
-            ))}
+    {/* Post content */}
+    <div className="font-bold text-lg text-gray-800">
+      {post.user.name}
+      <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
+      {post.image && (
+        <img
+          src={post.image}
+          className="mt-3 rounded-lg max-h-96 w-full object-cover"
+        />
+      )}
+      <div className="text-sm text-gray-400 mt-2">
+        {new Date(post.createdAt).toLocaleDateString()}
+      </div>
+      <div className="flex gap-6 items-center mt-4 text-sm font-medium">
+        <div className="flex items-center gap-1">
+          <button onClick={() => handleLike(post._id)}>👍</button>
+          <span
+            className="cursor-pointer text-gray-600"
+            onClick={displayLikes}
+          >
+            {post.likes.length} {post.likes.length === 1 ? "Like" : "likes"}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
+
           </div>
         </main>
         <RightSidebar />

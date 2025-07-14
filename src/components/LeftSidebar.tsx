@@ -1,15 +1,21 @@
-import { NavLink } from 'react-router-dom';
-import { FaHome, FaUser, FaUserFriends, FaInfoCircle } from 'react-icons/fa';
+import { NavLink } from "react-router-dom";
+import {
+  FaHome,
+  FaUser,
+  FaUserFriends,
+  FaInfoCircle,
+  FaTrashAlt,
+} from "react-icons/fa";
 
 const Sidebar = () => {
   const getNavLinkClass = ({ isActive }) => {
     const baseClasses =
-      'flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-colors';
-    const hoverClasses = 'hover:bg-blue-50 hover:text-blue-700';
-    const activeClasses = 'bg-blue-100 text-blue-900 font-semibold';
+      "flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-colors";
+    const hoverClasses = "hover:bg-blue-50 hover:text-blue-700";
+    const activeClasses = "bg-blue-100 text-blue-900 font-semibold";
 
     return `${baseClasses} ${hoverClasses} ${
-      isActive ? activeClasses : 'text-gray-700'
+      isActive ? activeClasses : "text-gray-700"
     }`;
   };
 
@@ -40,6 +46,12 @@ const Sidebar = () => {
             <NavLink to="/about" className={getNavLinkClass}>
               <FaInfoCircle size={18} />
               About
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/deleted-posts" className={getNavLinkClass}>
+              <FaTrashAlt size={18} />
+              Deleted Posts
             </NavLink>
           </li>
         </ul>
