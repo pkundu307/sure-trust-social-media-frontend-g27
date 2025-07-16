@@ -52,33 +52,34 @@ const DeletedPosts = () => {
               >
                 <div className="font-bold text-lg text-gray-800">
                   {post.user.name}
-                  <p className="mt-2 text-gray-700 font-semibold">
-                    {post.text}
-                  </p>
-                  {post.image && (
-                    <img
-                      src={post.image}
-                      className="mt-3 rounded-lg max-h-96 w-full object-cover"
-                    />
-                  )}
-                  <div className="text-sm text-gray-400 mt-2">
-                    Deleted At:{" "}
-                    {new Date(post.deletedAt).toLocaleDateString()}
-                  </div>
-                  <div className="flex gap-4 mt-4">
-                    <button
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      onClick={() => handleRestore(post._id)}
-                    >
-                      Restore
-                    </button>
-                    <button
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-                      onClick={() => handlePermanentDelete(post._id)}
-                    >
-                      Delete Permanently
-                    </button>
-                  </div>
+                </div>
+                <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
+                {post.image && (
+                  <img
+                    src={post.image}
+                    alt="Post"
+                    className="mt-3 rounded-lg max-h-96 w-full object-cover"
+                  />
+                )}
+                <div className="text-sm text-gray-500 mt-2">
+                  Deleted Around:{" "}
+                  {post.updatedAt
+                    ? new Date(post.updatedAt).toLocaleString()
+                    : "Unknown"}
+                </div>
+                <div className="flex gap-4 mt-4">
+                  <button
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    onClick={() => handleRestore(post._id)}
+                  >
+                    Restore
+                  </button>
+                  <button
+                    className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                    onClick={() => handlePermanentDelete(post._id)}
+                  >
+                    Delete Permanently
+                  </button>
                 </div>
               </div>
             ))
