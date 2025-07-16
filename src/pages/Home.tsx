@@ -18,7 +18,6 @@ const Home = () => {
   const [res, setRes] = useState({});
   const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -41,18 +40,6 @@ const Home = () => {
     };
   }, []);
 
-  useEffect(() => {
-  const handleClickOutside = (e: MouseEvent) => {
-    const target = e.target as HTMLElement;
-    // If clicked element is not inside any .menu-container, close it
-    if (!target.closest(".menu-container")) {
-      setOpenMenuId(null);
-    }
-  };
-
-  document.addEventListener("click", handleClickOutside);
-  return () => document.removeEventListener("click", handleClickOutside);
-}, []);
 
 
   const handlePost = async () => {
@@ -184,40 +171,6 @@ const Home = () => {
             {/* Posts */}
             {posts.map((post) => (
   <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
-    {post.user._id === localStorage.getItem("userId") && (
-      <div className="absolute top-4 right-4 menu-container">
-        <button
-          className="text-gray-600 text-xl font-bold"
-          onClick={(e) => {
-            e.stopPropagation(); // prevent body click from triggering close
-            setOpenMenuId((prev) => (prev === post._id ? null : post._id));
-          }}
-        >
-          ⋮
-        </button>
-
-        {openMenuId === post._id && (
-          <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
-            <button
-              className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
-              onClick={async () => {
-                try {
-                  await api.put(`/post/softDelete/${post._id}`);
-                  setPosts(posts.filter((p) => p._id !== post._id));
-                  alert("Post deleted successfully");
-                  setOpenMenuId(null); // close menu after deleting
-                } catch (err) {
-                  console.error(err);
-                  alert("Failed to delete post");
-                }
-              }}
-            >
-              Delete
-            </button>
-          </div>
-        )}
-      </div>
-    )}
 
     {/* Post content */}
     <div className="font-bold text-lg text-gray-800">

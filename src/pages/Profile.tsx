@@ -4,11 +4,24 @@ import type { IUser } from "../types/user";
 import type { Friend } from "../types/Friends";
 import type { IPost } from "../types/post";
 import { likeOrUnlikePost } from "../api/commonApis";
+import { NavLink } from "react-router-dom";
+import { FaTrashAlt } from "react-icons/fa";
 
 const Profile = () => {
   const [user, setUser] = useState<IUser | null>(null);
   const [friends, setFriends] = useState<Friend[]>([]);
   const [posts, setPosts] = useState<IPost[]>([]);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
+    const base =
+      "flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200";
+    const hover = "hover:bg-red-400";
+    const active = "bg-rose-500 text-white font-bold";
+    const inactive = "bg-rose-500 text-slate-900";
+
+    return `${base} ${hover} ${isActive ? active : inactive}`;
+  };
 
   const fetchData = () => {
     api
@@ -33,6 +46,18 @@ const Profile = () => {
       });
   }, []);
 
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest(".menu-container")) {
+        setOpenMenuId(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   function handleLike(postId: string) {
     likeOrUnlikePost(postId);
   }
@@ -42,22 +67,31 @@ const Profile = () => {
         <div className="max-w-7xl mx-auto p-6">
           {/* Header */}
 
-          <div className="bg-white shadow rounded-2xl p-6 mb-6">
-            <h2 className="text-3xl font-bold mb-2">Welcome,{user.name}</h2>
-            <p>
-              <strong>Email:{user.email}</strong>
-            </p>
-            <p>
-              <strong>BIO:{user.bio ? user.bio : "No BIO"}</strong>
-            </p>
-            <p>
-              <strong>
-                <button className="bg-orange-300 text-red-500 p-2 rounded shadow">
-                  ✏️Edit
-                </button>
-              </strong>
-            </p>
+          <div className="bg-white shadow rounded-2xl p-6 mb-6 flex justify-between items-center">
+            <div>
+              <h2 className="text-3xl font-bold mb-2">Welcome,{user.name}</h2>
+              <p>
+                <strong>Email:{user.email}</strong>
+              </p>
+              <p>
+                <strong>BIO:{user.bio ? user.bio : "No BIO"}</strong>
+              </p>
+              <p>
+                <strong>
+                  <button className="bg-orange-300 text-red-500 p-2 rounded shadow">
+                    ✏️Edit
+                  </button>
+                </strong>
+              </p>
+            </div>
+            <div>
+              <NavLink to="/deleted-posts" className={getNavLinkClass}>
+                <FaTrashAlt size={18} />
+                Deleted Posts
+              </NavLink>
+            </div>
           </div>
+
           {/* layout */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar */}
@@ -87,8 +121,49 @@ const Profile = () => {
               {posts.map((post) => (
                 <div
                   key={post._id}
-                  className="bg-white rounded shadow p-4 mb-4"
+                  className="bg-white rounded shadow p-4 mb-4 relative"
                 >
+                  {/* 3-dot delete menu (only for own posts) */}
+                  {post.user._id === localStorage.getItem("userId") && (
+                    <div className="absolute top-4 right-4 menu-container">
+                      <button
+                        className="text-gray-600 text-xl font-bold"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMenuId((prev) =>
+                            prev === post._id ? null : post._id
+                          );
+                        }}
+                      >
+                        ⋮
+                      </button>
+
+                      {openMenuId === post._id && (
+                        <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow z-10">
+                          <button
+                            className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-100"
+                            onClick={async () => {
+                              try {
+                                await api.put(`/post/softDelete/${post._id}`);
+                                setPosts(
+                                  posts.filter((p) => p._id !== post._id)
+                                );
+                                alert("Post deleted successfully");
+                                setOpenMenuId(null);
+                              } catch (err) {
+                                console.error(err);
+                                alert("Failed to delete post");
+                              }
+                            }}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Post content */}
                   <div className="font-bold text-lg">{post.user.name}</div>
                   <p className="mt-1">{post.text}</p>
                   {post.image && (
@@ -97,17 +172,19 @@ const Profile = () => {
                   <div className="text-sm text-gray-500 mt-1">
                     {new Date(post.createdAt).toLocaleString()}
                   </div>
-                  {/* total likes */}
+
+                  {/* Likes & Comments */}
                   <div className="flex space-x-6">
                     <div className="mt-2">
-                      <button className="bg-blue-500 text-white font-bold rounded px-3 py-1 mr-2"
-                      onClick={() => handleLike(post._id)}
+                      <button
+                        className="bg-blue-500 text-white font-bold rounded px-3 py-1 mr-2"
+                        onClick={() => handleLike(post._id)}
                       >
                         👍
                       </button>
                       <span className="font-semibold">
                         {post.likes.length}{" "}
-                        {post.likes.length > 1 ? "Likes" : "Like"}{" "}
+                        {post.likes.length > 1 ? "Likes" : "Like"}
                       </span>
                     </div>
                     <div className="mt-2">
@@ -116,7 +193,7 @@ const Profile = () => {
                       </button>
                       <span className="font-semibold">
                         {post.comments.length}{" "}
-                        {post.comments.length > 1 ? "Comments" : "Comment"}{" "}
+                        {post.comments.length > 1 ? "Comments" : "Comment"}
                       </span>
                     </div>
                   </div>
