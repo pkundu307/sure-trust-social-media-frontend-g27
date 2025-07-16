@@ -1,17 +1,22 @@
-import { NavLink } from 'react-router-dom';
-import { FaHome, FaUser, FaUserFriends, FaInfoCircle } from 'react-icons/fa';
+import { NavLink } from "react-router-dom";
+import {
+  FaHome,
+  FaUser,
+  FaUserFriends,
+  FaInfoCircle,
+} from "react-icons/fa";
 
 const Sidebar = () => {
-  const getNavLinkClass = ({ isActive }) => {
-    const baseClasses =
-      'flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-colors';
-    const hoverClasses = 'hover:bg-blue-50 hover:text-blue-700';
-    const activeClasses = 'bg-blue-100 text-blue-900 font-semibold';
+  const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
+  const baseClasses =
+    "flex items-center gap-3 p-3 rounded-lg text-sm font-medium transition-colors";
+  const hoverClasses = "hover:bg-blue-50 hover:text-blue-700";
+  const activeClasses = "bg-blue-100 text-blue-900 font-semibold";
 
-    return `${baseClasses} ${hoverClasses} ${
-      isActive ? activeClasses : 'text-gray-700'
-    }`;
-  };
+  return `${baseClasses} ${hoverClasses} ${
+    isActive ? activeClasses : "text-gray-700"
+  }`;
+};
 
   return (
     <aside className="hidden lg:flex flex-col w-64 h-screen bg-white shadow-md border-r border-gray-200 fixed left-0 top-0 p-4">

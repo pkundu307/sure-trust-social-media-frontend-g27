@@ -13,11 +13,13 @@ const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState("");
   const [displayLikePopup, setDisplayLikePopup] = useState(false);
-const [file, setFile] = useState(null);
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
   const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
+
+
   useEffect(() => {
     api
       .get("/post/all")
@@ -38,6 +40,8 @@ const [file, setFile] = useState(null);
     };
   }, []);
 
+
+
   const handlePost = async () => {
     if (!text.trim()) return;
     try {
@@ -49,12 +53,12 @@ const [file, setFile] = useState(null);
     }
   };
 
-   const handleUpload = async () => {
+  const handleUpload = async () => {
     try {
       setLoading(true);
       const data = new FormData();
       data.append("my_file", file);
-      data.append("text",text)
+      data.append("text", text);
       const res = await axios.post("http://localhost:3000/upload", data);
       setRes(res.data);
     } catch (error) {
@@ -115,80 +119,87 @@ const [file, setFile] = useState(null);
                 ))}
               </div>
             </div>
+
             {/* Create Post */}
             <div className="bg-white rounded-xl shadow p-4 mb-4">
               <textarea
-                className="w-full border border-gray-500 p-3 rounded-lg resize-none focus:ring-blue-600 "
+                className="w-full border border-gray-500 p-3 rounded-lg resize-none focus:ring-blue-600"
                 rows={3}
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="What's on your mind"
               />
-  <div className="App">
-      <label htmlFor="file" className="btn-grey">
-        {" "}
-        select file
-      </label>
-      {file && <center> {file.name}</center>}
-      <input
-        id="file"
-        type="file"
-        onChange={handleSelectFile}
-        multiple={false}
-      />
-      <code>
-        {Object.keys(res).length > 0
-          ? Object.keys(res).map((key) => (
-              <p className="output-item" key={key}>
-                <span>{key}:</span>
-                <span>
-                  {typeof res[key] === "object" ? "object" : res[key]}
-                </span>
-              </p>
-            ))
-          : null}
-      </code>
-      {file && (
-        <>
-          <button onClick={handleUpload} className="btn-green">
-            {loading ? "uploading..." : "upload to cloudinary"}
-          </button>
-        </>
-      )}
-    </div>              <button
+              <div className="App">
+                <label htmlFor="file" className="btn-grey">
+                  select file
+                </label>
+                {file && <center>{file.name}</center>}
+                <input
+                  id="file"
+                  type="file"
+                  onChange={handleSelectFile}
+                  multiple={false}
+                />
+                <code>
+                  {Object.keys(res).length > 0
+                    ? Object.keys(res).map((key) => (
+                        <p className="output-item" key={key}>
+                          <span>{key}:</span>
+                          <span>
+                            {typeof res[key] === "object" ? "object" : res[key]}
+                          </span>
+                        </p>
+                      ))
+                    : null}
+                </code>
+                {file && (
+                  <>
+                    <button onClick={handleUpload} className="btn-green">
+                      {loading ? "uploading..." : "upload to cloudinary"}
+                    </button>
+                  </>
+                )}
+              </div>
+              <button
                 className="mt-2 bg-blue-600 px-4 py-2 text-white rounded-lg"
                 onClick={handlePost}
               >
                 Post
               </button>
             </div>
+
             {/* Posts */}
             {posts.map((post) => (
-              <>
-                <div
-                  className="bg-white rounded-xl shadow p-4 mb-6"
-                  key={post._id}
-                >
-                  <div className="font-bold text-lg text-gray-800">
-                    {post.user.name}
-                    <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
-                    {post.image && (<img src={post.image} className="mt-3 rounded-lg max-h-96 w-full object-cover" />)}
-                    <div className="text-sm text-gray-400 mt-2">{
-new Date(post.createdAt).toLocaleDateString()
-}
-                    </div>
-                    <div className="flex gap-6 items-center mt-4 text-sm font-medium">
-<div className="flex items-center gap-1">
+  <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
 
-  <button onClick={()=>handleLike(post._id)}>👍</button>
-  <span className="cursor-pointer text-gray-600" onClick={displayLikes}>{post.likes.length}{post.likes.length===1?"Like":"likes"}</span>
-</div>
+    {/* Post content */}
+    <div className="font-bold text-lg text-gray-800">
+      {post.user.name}
+      <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
+      {post.image && (
+        <img
+          src={post.image}
+          className="mt-3 rounded-lg max-h-96 w-full object-cover"
+        />
+      )}
+      <div className="text-sm text-gray-400 mt-2">
+        {new Date(post.createdAt).toLocaleDateString()}
+      </div>
+      <div className="flex gap-6 items-center mt-4 text-sm font-medium">
+        <div className="flex items-center gap-1">
+          <button onClick={() => handleLike(post._id)}>👍</button>
+          <span
+            className="cursor-pointer text-gray-600"
+            onClick={displayLikes}
+          >
+            {post.likes.length} {post.likes.length === 1 ? "Like" : "likes"}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+))}
 
-                    </div>
-                  </div>
-                </div>
-              </>
-            ))}
           </div>
         </main>
         <RightSidebar />
