@@ -53,20 +53,63 @@ const Home = () => {
     }
   };
 
-  const handleUpload = async () => {
-    try {
-      setLoading(true);
-      const data = new FormData();
-      data.append("my_file", file);
-      data.append("text", text);
-      const res = await axios.post("http://localhost:3000/upload", data);
-      setRes(res.data);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
+const handleUpload = async () => {
+  // Prevent submission if there's no text. The image is optional.
+  if (!text) {
+    alert("Post text cannot be empty.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    
+    // 1. Create a new FormData object
+    const formData = new FormData();
+    
+    // 2. Append the text data. The key 'text' must match req.body.text.
+    formData.append("text", text);
+
+    // 3. Append the file IF it exists.
+    // The key 'image' MUST match upload.single('image') in your backend route.
+    if (file) {
+      formData.append("image", file);
     }
-  };
+
+    // 4. Retrieve the auth token
+    // Replace this with your actual token retrieval logic (from context, localStorage, etc.)
+    const token = localStorage.getItem("token"); 
+    if (!token) {
+        alert("You are not logged in.");
+        setLoading(false);
+        return;
+    }
+
+    // 5. Make the POST request to the correct endpoint with headers
+    // The endpoint should be your new combined endpoint, not "/upload"
+    const response = await axios.post(
+      "http://localhost:3000/api/post/add", // <-- CORRECT ENDPOINT
+      formData, 
+      {
+        headers: {
+          // The browser will set 'Content-Type': 'multipart/form-data' automatically with FormData
+          'Authorization': `Bearer ${token}` // <-- ADD AUTH TOKEN
+        },
+      }
+    );
+
+    // On success, you get the new post data back
+    console.log("Post created successfully:", response.data);
+    setRes(response.data); // Store the new post data
+// setPosts([res.data, ...posts]);
+  } catch (error) {
+    // Better error handling
+    const errorMessage = error.response?.data?.message || error.message;
+    console.error("Error creating post:", errorMessage);
+    alert(`Error: ${errorMessage}`);
+  } finally {
+    setLoading(false);
+  }
+};
   useEffect(() => {
     const loginTime = localStorage.getItem("loginTime");
     if (loginTime) {
@@ -162,7 +205,7 @@ const Home = () => {
               </div>
               <button
                 className="mt-2 bg-blue-600 px-4 py-2 text-white rounded-lg"
-                onClick={handlePost}
+                onClick={handleUpload}
               >
                 Post
               </button>
