@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {api} from '../api/axios';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Login = () => {
    
@@ -70,6 +70,9 @@ const Login = () => {
         <button className="bg-blue-600 text-white py-2 px-4 w-full rounded">
           Login
         </button>
+        <Link to="/forgotpassword" className="text-blue-500 hover:underline text-sm mt-2 inline-block">
+          Forgot Password?
+        </Link>
       </form>
     </div>
   );

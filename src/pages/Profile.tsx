@@ -13,13 +13,20 @@ const Profile = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
+  // Edit Modal States
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newBio, setNewBio] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
     const base =
       "flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200";
     const hover = "hover:bg-red-400";
     const active = "bg-rose-500 text-white font-bold";
     const inactive = "bg-rose-500 text-slate-900";
-
     return `${base} ${hover} ${isActive ? active : inactive}`;
   };
 
@@ -28,22 +35,27 @@ const Profile = () => {
       .get("/post/allofme")
       .then((res) => setPosts(res.data))
       .catch(() => alert("Failed to load posts"));
+
     api
       .get("friendRequest/allfriends")
       .then((res) => setFriends(res.data))
       .catch(() => alert("Failed to load friends"));
-  };
-  useEffect(() => {
-    fetchData();
+
     api
       .get("/user/me")
       .then((res) => {
         setUser(res.data);
+        setNewName(res.data.name || "");
+        setNewBio(res.data.bio || "");
       })
       .catch((err) => {
         console.error(err);
         alert("Failed to fetch user data");
       });
+  };
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -61,27 +73,28 @@ const Profile = () => {
   function handleLike(postId: string) {
     likeOrUnlikePost(postId);
   }
+
   return user ? (
     <>
-      <div className="bg-grey-100 min-h-screen ">
+      <div className="bg-grey-100 min-h-screen">
         <div className="max-w-7xl mx-auto p-6">
           {/* Header */}
-
           <div className="bg-white shadow rounded-2xl p-6 mb-6 flex justify-between items-center">
             <div>
-              <h2 className="text-3xl font-bold mb-2">Welcome,{user.name}</h2>
+              <h2 className="text-3xl font-bold mb-2">Welcome, {user.name}</h2>
               <p>
-                <strong>Email:{user.email}</strong>
+                <strong>Email: {user.email}</strong>
               </p>
               <p>
-                <strong>BIO:{user.bio ? user.bio : "No BIO"}</strong>
+                <strong>BIO: {user.bio ? user.bio : "No BIO"}</strong>
               </p>
               <p>
-                <strong>
-                  <button className="bg-orange-300 text-red-500 p-2 rounded shadow">
-                    ✏️Edit
-                  </button>
-                </strong>
+                <button
+                  className="bg-orange-300 text-red-500 p-2 rounded shadow mt-2"
+                  onClick={() => setShowEditModal(true)}
+                >
+                  ✏️ Edit
+                </button>
               </p>
             </div>
             <div>
@@ -95,7 +108,6 @@ const Profile = () => {
           {/* layout */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
             {/* Left Sidebar */}
-
             <div className="col-span-1 bg-white p-4 shadow rounded">
               <h3 className="text-lg font-semibold mb-2">Friends</h3>
               {friends.length === 0 ? (
@@ -116,14 +128,14 @@ const Profile = () => {
                 </ul>
               )}
             </div>
-            {/* posts */}
+
+            {/* Posts */}
             <div className="col-span-3">
               {posts.map((post) => (
                 <div
                   key={post._id}
                   className="bg-white rounded shadow p-4 mb-4 relative"
                 >
-                  {/* 3-dot delete menu (only for own posts) */}
                   {post.user._id === localStorage.getItem("userId") && (
                     <div className="absolute top-4 right-4 menu-container">
                       <button
@@ -145,9 +157,7 @@ const Profile = () => {
                             onClick={async () => {
                               try {
                                 await api.put(`/post/softDelete/${post._id}`);
-                                setPosts(
-                                  posts.filter((p) => p._id !== post._id)
-                                );
+                                setPosts(posts.filter((p) => p._id !== post._id));
                                 alert("Post deleted successfully");
                                 setOpenMenuId(null);
                               } catch (err) {
@@ -163,7 +173,6 @@ const Profile = () => {
                     </div>
                   )}
 
-                  {/* Post content */}
                   <div className="font-bold text-lg">{post.user.name}</div>
                   <p className="mt-1">{post.text}</p>
                   {post.image && (
@@ -173,7 +182,6 @@ const Profile = () => {
                     {new Date(post.createdAt).toLocaleString()}
                   </div>
 
-                  {/* Likes & Comments */}
                   <div className="flex space-x-6">
                     <div className="mt-2">
                       <button
@@ -201,11 +209,95 @@ const Profile = () => {
               ))}
             </div>
           </div>
+
+          {/* 🔧 Edit Profile Modal */}
+          {showEditModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md space-y-4 relative">
+                <h2 className="text-xl font-bold">Edit Profile</h2>
+
+                <input
+                  type="text"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="New Username"
+                  className="w-full border p-2 rounded"
+                />
+                <textarea
+                  value={newBio}
+                  onChange={(e) => setNewBio(e.target.value)}
+                  placeholder="New Bio"
+                  className="w-full border p-2 rounded"
+                />
+
+                <input
+                  type="password"
+                  value={oldPassword}
+                  onChange={(e) => setOldPassword(e.target.value)}
+                  placeholder="Current Password"
+                  className="w-full border p-2 rounded"
+                />
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="New Password"
+                  className="w-full border p-2 rounded"
+                />
+                <input
+                  type="password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  placeholder="Confirm New Password"
+                  className="w-full border p-2 rounded"
+                />
+
+                <div className="flex justify-end space-x-2">
+                  <button
+                    className="bg-gray-300 px-4 py-2 rounded"
+                    onClick={() => setShowEditModal(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="bg-green-500 text-white px-4 py-2 rounded"
+                    onClick={async () => {
+                      try {
+                        await api.put("/user/me", {
+                          name: newName,
+                          bio: newBio,
+                          email: user.email, // ✅ required by backend
+                        });
+
+
+                        if (oldPassword && newPassword && confirmNewPassword) {
+                          await api.put("/auth/change-password", {
+                            oldPassword,
+                            newPassword,
+                            confirmNewPassword,
+                          });
+                        }
+
+                        alert("Profile updated successfully");
+                        setShowEditModal(false);
+                        window.location.reload();
+                      } catch (err: any) {
+                        console.error(err);
+                        alert(err?.response?.data?.message || "Update failed");
+                      }
+                    }}
+                  >
+                    Save
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
   ) : (
-    <p>Loading profile</p>
+    <p>Loading profile...</p>
   );
 };
 

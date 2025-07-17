@@ -7,7 +7,9 @@ import Navbar from "./components/Navbar";
 import Friends from "./pages/Friends";
 import FriendProfile from "./pages/FriendProfile";
 import ChatPopUp from "./components/ChatPopUp";
-import DeletedPosts from './pages/DeletedPosts';
+import ForgotPassword from "./components/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+import DeletedPosts from "./pages/DeletedPosts";
 
 function App() {
     
@@ -25,7 +27,9 @@ function App() {
           <Route path="/home" element={<Home />} />
           <Route path='/friends' element={<Friends/>}/>
           <Route path="/profile/:id" element={<FriendProfile />} />
-          <Route path="/deleted-posts" element={<DeletedPosts />} />
+          <Route path="/forgotpassword" element={<ForgotPassword />} />
+          <Route path="/resetpassword" element={<ResetPassword />} />
+          <Route path="/deleted-posts" element={<DeletedPosts/>}/>
         </Routes>
       </BrowserRouter>
       <ChatPopUp/>
