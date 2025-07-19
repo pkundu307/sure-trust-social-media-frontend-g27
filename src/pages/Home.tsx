@@ -3,6 +3,7 @@ import { api } from "../api/axios";
 import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
+import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; // ✅ ADD THIS
 import { useNavigate } from "react-router-dom";
 import { likeOrUnlikePost } from "../api/commonApis";
 import { socket } from "../api/commonApis";
@@ -19,6 +20,7 @@ const Home = () => {
   const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
 
+  const userId = localStorage.getItem("userId"); // ✅ for mutual sidebar
 
   useEffect(() => {
     api
@@ -26,7 +28,6 @@ const Home = () => {
       .then((res) => setPosts(res.data))
       .catch(() => alert("Failed to load posts"));
 
-    // ✅ Subscribe to post like updates
     socket.on("post_liked", ({ postId, likes }) => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -36,11 +37,9 @@ const Home = () => {
     });
 
     return () => {
-      socket.off("post_liked"); // 🔁 clean up listener
+      socket.off("post_liked");
     };
   }, []);
-
-
 
   const handlePost = async () => {
     if (!text.trim()) return;
@@ -53,63 +52,48 @@ const Home = () => {
     }
   };
 
-const handleUpload = async () => {
-  // Prevent submission if there's no text. The image is optional.
-  if (!text) {
-    alert("Post text cannot be empty.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    
-    // 1. Create a new FormData object
-    const formData = new FormData();
-    
-    // 2. Append the text data. The key 'text' must match req.body.text.
-    formData.append("text", text);
-
-    // 3. Append the file IF it exists.
-    // The key 'image' MUST match upload.single('image') in your backend route.
-    if (file) {
-      formData.append("image", file);
+  const handleUpload = async () => {
+    if (!text) {
+      alert("Post text cannot be empty.");
+      return;
     }
 
-    // 4. Retrieve the auth token
-    // Replace this with your actual token retrieval logic (from context, localStorage, etc.)
-    const token = localStorage.getItem("token"); 
-    if (!token) {
+    try {
+      setLoading(true);
+      const formData = new FormData();
+      formData.append("text", text);
+      if (file) {
+        formData.append("image", file);
+      }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
         alert("You are not logged in.");
         setLoading(false);
         return;
-    }
-
-    // 5. Make the POST request to the correct endpoint with headers
-    // The endpoint should be your new combined endpoint, not "/upload"
-    const response = await axios.post(
-      "http://localhost:3000/api/post/add", // <-- CORRECT ENDPOINT
-      formData, 
-      {
-        headers: {
-          // The browser will set 'Content-Type': 'multipart/form-data' automatically with FormData
-          'Authorization': `Bearer ${token}` // <-- ADD AUTH TOKEN
-        },
       }
-    );
 
-    // On success, you get the new post data back
-    console.log("Post created successfully:", response.data);
-    setRes(response.data); // Store the new post data
-// setPosts([res.data, ...posts]);
-  } catch (error) {
-    // Better error handling
-    const errorMessage = error.response?.data?.message || error.message;
-    console.error("Error creating post:", errorMessage);
-    alert(`Error: ${errorMessage}`);
-  } finally {
-    setLoading(false);
-  }
-};
+      const response = await axios.post(
+        "http://localhost:3000/api/post/add",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Post created successfully:", response.data);
+      setRes(response.data);
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      console.error("Error creating post:", errorMessage);
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const loginTime = localStorage.getItem("loginTime");
     if (loginTime) {
@@ -125,6 +109,7 @@ const handleUpload = async () => {
       }
     }
   }, []);
+
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("loginTime");
@@ -142,10 +127,12 @@ const handleUpload = async () => {
   const displayLikes = () => {
     setDisplayLikePopup(!displayLikePopup);
   };
+
   return (
     <>
       <div className="flex">
         <LeftSidebar />
+
         <main className="flex-1 lg:ml-64 xl:mr-64 overflow-y-auto h-screen p-4 bg-gray-100">
           <div className="max-w-2xl mx-auto">
             {/* Stories */}
@@ -196,11 +183,9 @@ const handleUpload = async () => {
                     : null}
                 </code>
                 {file && (
-                  <>
-                    <button onClick={handleUpload} className="btn-green">
-                      {loading ? "uploading..." : "upload to cloudinary"}
-                    </button>
-                  </>
+                  <button onClick={handleUpload} className="btn-green">
+                    {loading ? "uploading..." : "upload to cloudinary"}
+                  </button>
                 )}
               </div>
               <button
@@ -213,39 +198,41 @@ const handleUpload = async () => {
 
             {/* Posts */}
             {posts.map((post) => (
-  <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
-
-    {/* Post content */}
-    <div className="font-bold text-lg text-gray-800">
-      {post.user.name}
-      <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
-      {post.image && (
-        <img
-          src={post.image}
-          className="mt-3 rounded-lg max-h-96 w-full object-cover"
-        />
-      )}
-      <div className="text-sm text-gray-400 mt-2">
-        {new Date(post.createdAt).toLocaleDateString()}
-      </div>
-      <div className="flex gap-6 items-center mt-4 text-sm font-medium">
-        <div className="flex items-center gap-1">
-          <button onClick={() => handleLike(post._id)}>👍</button>
-          <span
-            className="cursor-pointer text-gray-600"
-            onClick={displayLikes}
-          >
-            {post.likes.length} {post.likes.length === 1 ? "Like" : "likes"}
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-))}
-
+              <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
+                <div className="font-bold text-lg text-gray-800">
+                  {post.user.name}
+                  <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
+                  {post.image && (
+                    <img
+                      src={post.image}
+                      className="mt-3 rounded-lg max-h-96 w-full object-cover"
+                    />
+                  )}
+                  <div className="text-sm text-gray-400 mt-2">
+                    {new Date(post.createdAt).toLocaleDateString()}
+                  </div>
+                  <div className="flex gap-6 items-center mt-4 text-sm font-medium">
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => handleLike(post._id)}>👍</button>
+                      <span
+                        className="cursor-pointer text-gray-600"
+                        onClick={displayLikes}
+                      >
+                        {post.likes.length} {post.likes.length === 1 ? "Like" : "likes"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </main>
-        <RightSidebar />
+
+        {/* ✅ This renders Mutual Friends Sidebar alongside RightSidebar */}
+        <div className="relative">
+          <RightSidebar />
+          {userId && <MutualFriendsSidebar userId={userId} />}
+        </div>
       </div>
     </>
   );
@@ -253,4 +240,3 @@ const handleUpload = async () => {
 
 export default Home;
 
-//improvisation -> like , comment option , ui improvement, post image and video upload
