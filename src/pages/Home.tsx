@@ -3,7 +3,7 @@ import { api } from "../api/axios";
 import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
-import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; // ✅ added
+import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; 
 import { useNavigate } from "react-router-dom";
 import { likeOrUnlikePost, socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
@@ -17,7 +17,7 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
   const navigate = useNavigate();
-  const userId = localStorage.getItem("userId"); // ✅ needed for MutualFriendsSidebar
+  const userId = localStorage.getItem("userId"); 
 
   const handleSelectFile = (e) => setFile(e.target.files[0]);
 
@@ -223,7 +223,6 @@ const Home = () => {
           </div>
         </main>
 
-        {/* Right Sidebar and Mutual Friends */}
         <div className="hidden lg:block w-64 space-y-6 pr-4">
           <RightSidebar />
           {userId && <MutualFriendsSidebar userId={userId} />}
