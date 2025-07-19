@@ -3,7 +3,7 @@ import { api } from "../api/axios";
 import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
-import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; // ✅ ADD THIS
+import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; // ✅ mutual friends sidebar
 import { useNavigate } from "react-router-dom";
 import { likeOrUnlikePost } from "../api/commonApis";
 import { socket } from "../api/commonApis";
