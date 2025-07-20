@@ -3,7 +3,6 @@ import { api } from "../api/axios";
 import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
-import MutualFriendsSidebar from "../components/MutualFriendsSidebar"; 
 import { useNavigate } from "react-router-dom";
 import { likeOrUnlikePost, socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
@@ -223,9 +222,8 @@ const Home = () => {
           </div>
         </main>
 
-        <div className="hidden lg:block w-64 space-y-6 pr-4">
-          <RightSidebar />
-          {userId && <MutualFriendsSidebar userId={userId} />}
+        <div >
+          {userId && <RightSidebar userId={userId} />}
         </div>
       </div>
     </>
