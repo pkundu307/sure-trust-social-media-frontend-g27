@@ -8,6 +8,7 @@ import { likeOrUnlikePost } from "../api/commonApis";
 import { socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
 import axios from "axios";
+import StoriesComponent from "../components/Stories";
 
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
@@ -19,6 +20,19 @@ const Home = () => {
   const handleSelectFile = (e) => setFile(e.target.files[0]);
   const navigate = useNavigate();
 
+
+  const createLikeNotification = async(data:any,token:string)=>{
+    try {
+      const res = await axios.post(`http://localhost:3000/api/notification/create`,data,{
+        headers:{
+          Authorization:`Bearer ${token}`
+        }
+      })
+      return res.data;
+    } catch (error) {
+    console.error(error)
+    }
+  }
 
   useEffect(() => {
     api
@@ -34,6 +48,8 @@ const Home = () => {
         )
       );
     });
+
+    
 
     return () => {
       socket.off("post_liked"); // 🔁 clean up listener
@@ -131,9 +147,12 @@ const handleUpload = async () => {
     navigate("/");
   }
 
-  const handleLike = async (postId: string) => {
+  const handleLike = async (postId: string,userId:string) => {
     try {
+
       await likeOrUnlikePost(postId);
+      const data={recipient:userId,type:"like_post"}
+      createLikeNotification(data,localStorage.getItem("token")||'')
     } catch (error) {
       console.log("error");
     }
@@ -149,19 +168,7 @@ const handleUpload = async () => {
         <main className="flex-1 lg:ml-64 xl:mr-64 overflow-y-auto h-screen p-4 bg-gray-100">
           <div className="max-w-2xl mx-auto">
             {/* Stories */}
-            <div className="bg-white rounded-xl shadow p-4 mb-6">
-              <h2 className="text-xl font-bold mb-4">Stories</h2>
-              <div className="flex space-x-4 overflow-x-auto">
-                {[1, 2, 3].map((story, i) => (
-                  <div
-                    key={i}
-                    className="rounded-full bg-gradient-to-tr from-purple-400 to-blue-800 w-24 h-24 items-center justify-center text-white font-semibold text-sm"
-                  >
-                    Story{story}
-                  </div>
-                ))}
-              </div>
-            </div>
+          <StoriesComponent/>
 
             {/* Create Post */}
             <div className="bg-white rounded-xl shadow p-4 mb-4">
@@ -230,7 +237,7 @@ const handleUpload = async () => {
       </div>
       <div className="flex gap-6 items-center mt-4 text-sm font-medium">
         <div className="flex items-center gap-1">
-          <button onClick={() => handleLike(post._id)}>👍</button>
+          <button onClick={() => handleLike(post._id,post.user._id)}>👍</button>
           <span
             className="cursor-pointer text-gray-600"
             onClick={displayLikes}
