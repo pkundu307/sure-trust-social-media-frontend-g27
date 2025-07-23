@@ -30,8 +30,6 @@ function App() {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
           <Route path="/deleted-posts" element={<DeletedPosts/>}/>
-         
-
         </Routes>
       </BrowserRouter>
       <ChatPopUp/>
