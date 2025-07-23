@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { api } from "../api/axios";
-
-// This should be your real socket instance
 import { io, Socket } from "socket.io-client";
+import { Image as ImageIcon } from "lucide-react"; // Import an icon for the button
 
 // Define a more robust type for our messages
 interface Message {
@@ -16,8 +15,6 @@ interface Message {
   createdAt: string;
 }
 
-// Assume you have a socket instance exported from a file
-// It's better to initialize it once and export it.
 const socket: Socket = io("http://localhost:3000");
 
 const ChatWindow = ({ onClose }: { onClose: () => void }) => {
@@ -26,74 +23,64 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
+  const [isUploading, setIsUploading] = useState(false); // State for upload feedback
   const currentUserId = localStorage.getItem("userId") || "";
-
-  // Ref to hold the current selected user to avoid stale state in socket listeners
+  
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for the hidden file input
   const selectedUserRef = useRef(selectedUser);
+  
   useEffect(() => {
     selectedUserRef.current = selectedUser;
   }, [selectedUser]);
 
   // --- EFFECT 1: One-time setup for friends list and socket connection ---
   useEffect(() => {
-    // Fetch friends only once when the component mounts
-    api
-      .get("/friendRequest/allfriends")
+    api.get("/friendRequest/allfriends")
       .then((res) => setFriends(res.data))
       .catch(() => alert("Failed to load friends"));
 
-    // Set up the socket connection for this user only once
     if (currentUserId) {
       socket.emit("setup", currentUserId);
     }
 
-    // The main listener for incoming messages
     const handleReceiveMessage = (newMessage: Message) => {
-      // Check if the message belongs to the currently active chat window
-      const isChatActive =
-        selectedUserRef.current?._id === newMessage.sender._id;
-
-      if (isChatActive) {
+      // If the received message is for the active chat, update the UI
+      if (selectedUserRef.current?._id === newMessage.sender._id || selectedUserRef.current?._id === newMessage.receiver) {
         setMessages((prev) => [...prev, newMessage]);
       } else {
-        // Optional: Handle notifications for inactive chats
-        console.log(
-          `Received message from ${newMessage.sender.name}, but chat is not active.`
-        );
-        // You could update a 'hasNewMessage' state for the friend list here
+        console.log(`Received message from ${newMessage.sender.name}, but chat is not active.`);
       }
     };
 
     socket.on("receive_message", handleReceiveMessage);
 
-    // Clean up the listener when the component unmounts
     return () => {
       socket.off("receive_message", handleReceiveMessage);
     };
-  }, [currentUserId]); // This effect should only run once when the component mounts.
+  }, [currentUserId]);
 
-  // --- EFFECT 2: Fetch message history when a user is selected ---
+  // --- EFFECT 2: Fetch message history when a new user is selected ---
   useEffect(() => {
     if (selectedUser) {
-      // **IMPORTANT**: You need to create this API endpoint on your backend.
-      // It should fetch all messages between the current user and the selected user.
-      // For now, we'll just clear messages.
-      /*
-      api.get(`/api/messages/${selectedUser._id}`) // Example endpoint
-        .then(res => {
+      setIsLoading(true); // Show loading state for messages
+      setMessages([]); // Clear previous messages
+
+      api.get(`/chat/${selectedUser._id}`)
+        .then((res) => {
           setMessages(res.data);
         })
         .catch(() => {
-          alert('Failed to load message history.');
-          setMessages([]); // Clear on failure
+          alert("Failed to load messages.");
+          setMessages([]);
+        })
+        .finally(() => {
+          setIsLoading(false);
         });
-      */
-      // For now, we just clear the chat window
-      setMessages([]);
     }
-  }, [selectedUser]); // Reruns whenever you select a new friend
+  }, [selectedUser]);
 
-  const handleSend = () => {
+  // --- Handler for sending TEXT messages ---
+  const handleSendText = () => {
     if (!text.trim() || !selectedUser) return;
 
     const payload = {
@@ -104,11 +91,9 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
 
     socket.emit("send_message", payload);
 
-    // Optimistic UI Update: Add the message immediately to the UI
-    // We create a temporary message object that matches our `Message` interface
     const optimisticMessage: Message = {
-      _id: `temp_${Date.now()}`, // temporary unique ID
-      sender: { _id: currentUserId, name: "You" }, // We know the sender is the current user
+      _id: `temp_${Date.now()}`,
+      sender: { _id: currentUserId, name: "You" },
       receiver: selectedUser._id,
       content: text,
       createdAt: new Date().toISOString(),
@@ -118,30 +103,65 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
     setText("");
   };
 
-  useEffect(() => {
-    if(selectedUser){
-      setIsLoading(false);
-      setMessages([]);
+  // --- Handler for sending PHOTO messages ---
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-      api.get(`/chat/${selectedUser._id}`)
-      .then((res) => {
-        setMessages(res.data);
-      })
-      .catch(() => {
-        alert("Failed to load messages.");
-        setMessages([]); // Clear messages on failure
-      }
-    );
-    }}, [selectedUser]);
+    setIsUploading(true);
+    const reader = new FileReader();
+    
+    // Read the file as a data URL (which includes the base64 string)
+    reader.readAsDataURL(file);
+
+    reader.onload = () => {
+      // The result looks like "data:image/jpeg;base64,LzlqLzRB..."
+      const base64String = (reader.result as string).split(',')[1];
+
+      const payload = {
+        senderId: currentUserId,
+        receiverId: selectedUser._id,
+        fileData: base64String,
+        fileType: file.type,
+      };
+
+      // Emit the new event for photo messages
+      socket.emit("send_photo_message", payload);
+      
+      // Optimistic UI update for the image
+      const optimisticImageMessage: Message = {
+        _id: `temp_img_${Date.now()}`,
+        sender: { _id: currentUserId, name: "You" },
+        receiver: selectedUser._id,
+        content: `img+${reader.result}`, // Use the full data URI for instant preview
+        createdAt: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, optimisticImageMessage]);
+      setIsUploading(false);
+    };
+
+    reader.onerror = () => {
+      console.error("Error reading the file.");
+      alert("Failed to read file.");
+      setIsUploading(false);
+    };
+  };
+
+  // Helper to render message content (text or image)
+  const renderMessageContent = (content: string) => {
+    if (content.startsWith("img+")) {
+      // Correctly split the "img+" prefix to get the URL or data URI
+      const imageUrl = content.split('+').slice(1).join('+');
+      return <img src={imageUrl} alt="chat content" className="max-w-full h-auto rounded-md" />;
+    }
+    return <p className="break-words">{content}</p>;
+  };
+
   return (
     <div className="w-[320px] h-[400px] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col z-50">
       <div className="bg-gray-800 text-white px-4 py-2 flex justify-between items-center">
-        <span className="font-semibold">
-          {selectedUser ? selectedUser.name : "Chats"}
-        </span>
-        <button onClick={onClose} className="text-sm hover:text-red-400">
-          ✕
-        </button>
+        <span className="font-semibold">{selectedUser ? selectedUser.name : "Chats"}</span>
+        <button onClick={onClose} className="text-sm hover:text-red-400">✕</button>
       </div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -151,9 +171,7 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
             <div
               key={user._id}
               onClick={() => setSelectedUser(user)}
-              className={`p-2 cursor-pointer hover:bg-gray-100 ${
-                selectedUser?._id === user._id ? "bg-gray-200 font-bold" : ""
-              }`}
+              className={`p-2 cursor-pointer hover:bg-gray-100 ${selectedUser?._id === user._id ? "bg-gray-200 font-bold" : ""}`}
             >
               {user.name}
             </div>
@@ -163,59 +181,59 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
         {/* Message View */}
         <div className="w-2/3 flex flex-col">
           <div className="p-3 flex-1 overflow-y-auto text-sm space-y-3">
-            {/* Render message history only if a user is selected */}
             {selectedUser ? (
-              messages.map((msg) => (
-                <div
-                  key={msg._id}
-                  className={`flex ${
-                    // Check if the message was sent by the current user
-                    msg.sender._id === currentUserId
-                      ? "justify-end"
-                      : "justify-start"
-                  }`}
-                >
+              isLoading ? (
+                <div className="flex items-center justify-center h-full text-gray-500">Loading...</div>
+              ) : (
+                messages.map((msg) => (
                   <div
-                    className={`rounded-lg px-3 py-2 max-w-[85%] ${
-                      msg.sender._id === currentUserId
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 text-gray-800"
-                    }`}
+                    key={msg._id}
+                    className={`flex ${msg.sender._id === currentUserId ? "justify-end" : "justify-start"}`}
                   >
-                    {/* For better UX, you can show sender name on received messages */}
-                    {msg.sender._id !== currentUserId && (
-                      <p className="text-xs font-bold text-gray-600">
-                        {msg.sender.name}
-                      </p>
-                    )}
-                    <p className="break-words">{msg.content.startsWith('img')?(<><img src={msg.content.slice(3)}/></>):(<>{msg.content}</>)}</p>
+                    <div className={`rounded-lg px-3 py-2 max-w-[85%] ${msg.sender._id === currentUserId ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-800"}`}>
+                      {msg.sender._id !== currentUserId && <p className="text-xs font-bold text-gray-600">{msg.sender.name}</p>}
+                      {renderMessageContent(msg.content)}
+                    </div>
                   </div>
-                </div>
-              ))
+                ))
+              )
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
-                Select a friend to start chatting.
-              </div>
+              <div className="flex items-center justify-center h-full text-gray-500">Select a friend to start chatting.</div>
             )}
           </div>
 
           {/* Input field is only active if a user is selected */}
           {selectedUser && (
-            <div className="p-2 border-t flex gap-1">
-              <button className="bg-amber-100 p-2"
-              onClick={() => (setText('img'+text))}
-              >Img</button>
+            <div className="p-2 border-t flex gap-1 items-center">
+              {/* --- NEW: Hidden file input and button to trigger it --- */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleFileSelect} 
+                className="hidden"
+                accept="image/*"
+              />
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="p-2 text-gray-600 hover:bg-gray-200 rounded-full transition-colors"
+              >
+                {isUploading ? "..." : <ImageIcon size={20} />}
+              </button>
+              
               <input
                 type="text"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 className="w-full p-2 border rounded text-sm"
                 placeholder="Type a message..."
-                onKeyDown={(e) => e.key === "Enter" && handleSend()}
+                onKeyDown={(e) => e.key === "Enter" && handleSendText()}
+                disabled={isUploading}
               />
               <button
-                onClick={handleSend}
+                onClick={handleSendText}
                 className="bg-blue-500 text-white px-4 rounded hover:bg-blue-600"
+                disabled={isUploading}
               >
                 Send
               </button>
