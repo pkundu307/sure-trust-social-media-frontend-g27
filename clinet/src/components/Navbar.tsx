@@ -9,23 +9,33 @@ const Navbar = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
+  // ✅ Use this profileImage state to control the avatar shown
+  const [profileImage, setProfileImage] = useState<string>("https://i.pravatar.cc/300");
+
   useEffect(() => {
-    const handler = (e: MouseEvent) => {
+    const savedImage = localStorage.getItem("profileImage");
+    if (savedImage) {
+      setProfileImage(savedImage);
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
       if (
         profileMenuRef.current &&
-        !profileMenuRef.current.contains(e.target as Node)
+        !profileMenuRef.current.contains(event.target as Node)
       ) {
         setIsProfileOpen(false);
       }
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("loginTime");
+    localStorage.removeItem("profileImage");
     navigate("/login");
   };
 
@@ -59,16 +69,16 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Profile Dropdown */}
+            {/* ✅ Profile Dropdown */}
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setIsProfileOpen(!isProfileOpen)}
                 className="focus:outline-none"
               >
                 <img
-                  src="https://i.pravatar.cc/300"
-                  className="w-9 h-9 rounded-full border border-gray-300 object-cover hover:ring-2 hover:ring-indigo-400 transition"
-                  alt="avatar"
+                  src={profileImage || "https://via.placeholder.com/40"}
+                  alt="profile"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white"
                 />
               </button>
 
@@ -91,7 +101,7 @@ const Navbar = () => {
               )}
             </div>
 
-     
+            {/* Mobile Menu Button */}
             <button
               className="md:hidden text-gray-600 hover:text-indigo-600 focus:outline-none"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -113,16 +123,22 @@ const Navbar = () => {
           </div>
         </div>
       </div>
-{isMobileMenuOpen && (<>
-<div className="md:hidden px-4 pb-4 pt-4 bg-white border-t space-y-3.5">
-  <Search/>
-  <Link to="/home" className="block text-gray-600 hover:text-indigo-400 ml-2"><FiHome size={22}/></Link>
-    <Link to="/Profile" className="block text-gray-600 hover:text-indigo-400 ml-2"><FiUser size={22}/></Link>
-  <Link to="/Notification" className="block text-gray-600 hover:text-indigo-400 ml-2"><FiBell size={22}/></Link>
 
-</div>
-</>)}
-    
+      {/* Mobile Menu */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden px-4 pb-4 pt-4 bg-white border-t space-y-3.5">
+          <Search />
+          <Link to="/home" className="block text-gray-600 hover:text-indigo-400 ml-2">
+            <FiHome size={22} />
+          </Link>
+          <Link to="/Profile" className="block text-gray-600 hover:text-indigo-400 ml-2">
+            <FiUser size={22} />
+          </Link>
+          <Link to="/Notification" className="block text-gray-600 hover:text-indigo-400 ml-2">
+            <FiBell size={22} />
+          </Link>
+        </div>
+      )}
     </nav>
   );
 };
