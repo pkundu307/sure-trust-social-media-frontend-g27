@@ -10,6 +10,7 @@ import ChatPopUp from "./components/ChatPopUp";
 import ForgotPassword from "./components/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import DeletedPosts from "./pages/DeletedPosts";
+import Notifications from "./pages/NotificationsPage";
 
 function App() {
     
@@ -30,6 +31,8 @@ function App() {
           <Route path="/forgotpassword" element={<ForgotPassword />} />
           <Route path="/resetpassword" element={<ResetPassword />} />
           <Route path="/deleted-posts" element={<DeletedPosts/>}/>
+          <Route path="/notifications" element={<Notifications />} />
+
         </Routes>
       </BrowserRouter>
       <ChatPopUp/>
