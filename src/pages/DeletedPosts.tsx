@@ -3,6 +3,8 @@ import { api } from "../api/axios";
 import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const DeletedPosts = () => {
   const [deletedPosts, setDeletedPosts] = useState<IPost[]>([]);
@@ -11,17 +13,17 @@ const DeletedPosts = () => {
     api
       .get("/post/deleted")
       .then((res) => setDeletedPosts(res.data))
-      .catch(() => alert("Failed to load deleted posts"));
+      .catch(() => toast.error("Failed to load deleted posts"));
   }, []);
 
   const handleRestore = async (postId: string) => {
     try {
       await api.put(`/post/restore/${postId}`);
       setDeletedPosts((prev) => prev.filter((p) => p._id !== postId));
-      alert("Post restored successfully");
+      toast.success("Post restored successfully");
     } catch (err) {
       console.error(err);
-      alert("Failed to restore post");
+      toast.error("Failed to restore post");
     }
   };
 
@@ -29,10 +31,10 @@ const DeletedPosts = () => {
     try {
       await api.delete(`/post/${postId}`);
       setDeletedPosts((prev) => prev.filter((p) => p._id !== postId));
-      alert("Post permanently deleted");
+      toast.success("Post permanently deleted");
     } catch (err) {
       console.error(err);
-      alert("Failed to delete post");
+      toast.error("Failed to delete post");
     }
   };
 
@@ -87,6 +89,7 @@ const DeletedPosts = () => {
         </div>
       </main>
       <RightSidebar />
+      <ToastContainer position="top-right" autoClose={3000} />
     </div>
   );
 };

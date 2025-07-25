@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import {api} from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 
 
 const ForgotPassword = () => {
@@ -14,10 +17,16 @@ const ForgotPassword = () => {
   try {
     await api.post('/user/forgot-password', { email });
     localStorage.setItem('resetEmail', email); // ✅ store email
-    alert('OTP sent. Redirecting to reset page...');
+    toast.success('OTP sent. Redirecting to reset page...', {
+        position: 'top-center',
+        autoClose: 3000,
+      });
     navigate('/resetpassword');
   } catch {
-    alert('Failed to send OTP');
+    toast.error('Failed to send OTP. Please try again.', {
+        position: 'top-center',
+        autoClose: 3000,
+      });
   }
 };
 
@@ -39,6 +48,7 @@ const ForgotPassword = () => {
         </button>
         {message && <p className="text-sm text-gray-600">{message}</p>}
       </form>
+      <ToastContainer />
     </div>
   );
 };

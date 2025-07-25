@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
 import type { Friend, FriendRequest } from "../types/Friends";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Friends = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
@@ -10,12 +12,12 @@ const Friends = () => {
     api
       .get("/friendRequest/all")
       .then((res) => setFriendRequests(res.data))
-      .catch(() => alert("Failed to load friend requests"));
+      .catch(() => toast.error("Failed to load friend requests"));
 
     api
       .get("friendRequest/allfriends")
       .then((res) => setFriends(res.data))
-      .catch(() => alert("Failed to load friends"));
+      .catch(() => toast.error("Failed to load friends"));
   };
 
   useEffect(() => {

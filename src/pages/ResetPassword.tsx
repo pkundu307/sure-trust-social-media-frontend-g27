@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
 import {api} from '../api/axios';
 import { useNavigate } from 'react-router-dom';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const ResetPassword = () => {
   const [email, setEmail] = useState('');
@@ -19,16 +21,17 @@ const ResetPassword = () => {
     e.preventDefault();
     try {
       await api.post('/user/reset-password', { email, code, newPassword });
-      alert('Password reset successful');
+      toast.success('Password reset successful');
       localStorage.removeItem('resetEmail');
       navigate('/');
     } catch {
-      alert('Reset failed');
+      toast.error('Reset failed');
     }
   };
 
   return (
     <div className="p-6 max-w-md mx-auto">
+      <ToastContainer position="top-center" />
       <h2 className="text-2xl font-bold mb-4">Reset Password</h2>
       <form onSubmit={handleReset} className="space-y-4">
         <input

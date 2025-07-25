@@ -8,6 +8,9 @@ import { likeOrUnlikePost } from "../api/commonApis";
 import { socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
 import axios from "axios";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
@@ -24,7 +27,7 @@ const Home = () => {
     api
       .get("/post/all")
       .then((res) => setPosts(res.data))
-      .catch(() => alert("Failed to load posts"));
+      .catch(() => toast.error("Failed to load posts"));
 
     // ✅ Subscribe to post like updates
     socket.on("post_liked", ({ postId, likes }) => {
@@ -49,14 +52,14 @@ const Home = () => {
       setPosts([res.data, ...posts]);
       setText("");
     } catch {
-      alert("Failed to create post");
+      toast.error("Failed to create post");
     }
   };
 
 const handleUpload = async () => {
   // Prevent submission if there's no text. The image is optional.
   if (!text) {
-    alert("Post text cannot be empty.");
+    toast.error("Post text cannot be empty.");
     return;
   }
 
@@ -79,7 +82,7 @@ const handleUpload = async () => {
     // Replace this with your actual token retrieval logic (from context, localStorage, etc.)
     const token = localStorage.getItem("token"); 
     if (!token) {
-        alert("You are not logged in.");
+        toast.error("You are not logged in.");
         setLoading(false);
         return;
     }
@@ -105,7 +108,7 @@ const handleUpload = async () => {
     // Better error handling
     const errorMessage = error.response?.data?.message || error.message;
     console.error("Error creating post:", errorMessage);
-    alert(`Error: ${errorMessage}`);
+    toast.error(`Error: ${errorMessage}`);
   } finally {
     setLoading(false);
   }
@@ -121,7 +124,7 @@ const handleUpload = async () => {
         localStorage.removeItem("token");
         localStorage.removeItem("loginTime");
         handleLogout();
-        alert("Session expired. Please log in again.");
+        toast.info("Session expired. Please log in again.");
       }
     }
   }, []);
@@ -247,6 +250,7 @@ const handleUpload = async () => {
         </main>
         <RightSidebar />
       </div>
+      <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
 };

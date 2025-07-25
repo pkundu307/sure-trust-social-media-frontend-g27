@@ -3,6 +3,8 @@ import { api } from "../api/axios";
 
 // This should be your real socket instance
 import { io, Socket } from "socket.io-client";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 // Define a more robust type for our messages
 interface Message {
@@ -40,7 +42,7 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
     api
       .get("/friendRequest/allfriends")
       .then((res) => setFriends(res.data))
-      .catch(() => alert("Failed to load friends"));
+      .catch(() => toast.error("Failed to load friends"));
 
     // Set up the socket connection for this user only once
     if (currentUserId) {
@@ -128,7 +130,7 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
         setMessages(res.data);
       })
       .catch(() => {
-        alert("Failed to load messages.");
+        toast.error("Failed to load messages.");
         setMessages([]); // Clear messages on failure
       }
     );

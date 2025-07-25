@@ -1,6 +1,9 @@
 import React, { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { api } from '../api/axios';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 interface Profile {
   id: string;
   name: string;
@@ -21,7 +24,7 @@ const[profile,setProfile] = React.useState<Profile | null>(null);
       })
       .catch((err) => {
         console.error(err);
-        alert("Failed to fetch friend profile");
+        toast.error("Failed to fetch friend profile");
       });
   }
   useEffect(() => {
@@ -32,6 +35,7 @@ const[profile,setProfile] = React.useState<Profile | null>(null);
   }, );
   return (
     <div>
+      <ToastContainer position="top-right" autoClose={3000} />
       {profile ? (
         <>
           {profile.name || 'No Name'}'s Profile

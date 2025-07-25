@@ -6,6 +6,8 @@ import type { IPost } from "../types/post";
 import { likeOrUnlikePost } from "../api/commonApis";
 import { NavLink } from "react-router-dom";
 import { FaTrashAlt } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const Profile = () => {
   const [user, setUser] = useState<IUser | null>(null);
@@ -34,12 +36,12 @@ const Profile = () => {
     api
       .get("/post/allofme")
       .then((res) => setPosts(res.data))
-      .catch(() => alert("Failed to load posts"));
+      .catch(() => toast.error("Failed to load posts"));
 
     api
       .get("friendRequest/allfriends")
       .then((res) => setFriends(res.data))
-      .catch(() => alert("Failed to load friends"));
+      .catch(() => toast.error("Failed to load friends"));
 
     api
       .get("/user/me")
@@ -50,7 +52,7 @@ const Profile = () => {
       })
       .catch((err) => {
         console.error(err);
-        alert("Failed to fetch user data");
+        toast.error("Failed to fetch user data");
       });
   };
 
@@ -158,11 +160,11 @@ const Profile = () => {
                               try {
                                 await api.put(`/post/softDelete/${post._id}`);
                                 setPosts(posts.filter((p) => p._id !== post._id));
-                                alert("Post deleted successfully");
+                                toast.success("Post deleted successfully");
                                 setOpenMenuId(null);
                               } catch (err) {
                                 console.error(err);
-                                alert("Failed to delete post");
+                                toast.error("Failed to delete post");
                               }
                             }}
                           >
@@ -278,12 +280,12 @@ const Profile = () => {
                           });
                         }
 
-                        alert("Profile updated successfully");
+                        toast.success("Profile updated successfully");
                         setShowEditModal(false);
                         window.location.reload();
                       } catch (err: any) {
                         console.error(err);
-                        alert(err?.response?.data?.message || "Update failed");
+                        toast.error(err?.response?.data?.message || "Update failed");
                       }
                     }}
                   >
@@ -294,6 +296,7 @@ const Profile = () => {
             </div>
           )}
         </div>
+        <ToastContainer position="top-right" autoClose={3000} />
       </div>
     </>
   ) : (
