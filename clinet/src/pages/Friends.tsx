@@ -1,58 +1,21 @@
 import { useEffect, useState } from "react";
 import { api } from "../api/axios";
 import type { Friend, FriendRequest } from "../types/Friends";
-import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import { createNotification, socket } from "../api/commonApis";
-// import { toast } from "react-toastify"; // optional for feedback
 
 const Friends = () => {
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
   const [friends, setFriends] = useState<Friend[]>([]);
 
-
-const handleAccept = async (requestId: string, fromUserId: string) => {
-  try {
-    const token = localStorage.getItem("token") || "";
-
-    const res = await api.put(`/friendRequest/accept/${requestId}`, {}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      }
-    });
-
-    // 1. Send notification
-    await createNotification({
-      recipient: fromUserId,
-      type: "friend_accept",
-    }, token);
-
-    // 2. Emit socket notification
-    socket.emit("sendNotification", {
-      recipient: fromUserId,
-      type: "accept_friend_request",
-    });
-
-    // toast.success("Friend request accepted");
-
-    // 3. Refresh the list
-    fetchData();
-  } catch (err) {
-    console.log("Error accepting friend request", err);
-    // toast.error("Error accepting friend request");
-  }
-};
-
   const fetchData = () => {
     api
       .get("/friendRequest/all")
       .then((res) => setFriendRequests(res.data))
-      .catch(() => toast.error("Failed to load friend requests"));
+      .catch(() => alert("Failed to load friend requests"));
 
     api
       .get("friendRequest/allfriends")
       .then((res) => setFriends(res.data))
-      .catch(() => toast.error("Failed to load friends"));
+      .catch(() => alert("Failed to load friends"));
   };
 
   useEffect(() => {
@@ -79,12 +42,9 @@ const handleAccept = async (requestId: string, fromUserId: string) => {
                   className="bg-white p-4 shadow rounded-3xl flex justify-between"
                 >
                   <span>{request.from.name}</span>
-                <button
-  onClick={() => handleAccept(request._id, request.from._id)}
-  className="bg-green-500 text-amber-100 font-bold rounded-4xl p-2"
->
-  Accept
-</button>
+                  <button className="bg-green-500 text-amber-100 font-bold rounded-4xl p-2">
+                    Accept
+                  </button>
                   <button className="bg-red-500 text-amber-100 font-bold rounded-4xl p-2">
                     Decline
                   </button>

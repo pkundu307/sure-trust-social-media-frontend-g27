@@ -4,30 +4,29 @@ import type { IPost } from "../types/post";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
 import { useNavigate } from "react-router-dom";
-import { likeOrUnlikePost, socket } from "../api/commonApis";
+import { likeOrUnlikePost } from "../api/commonApis";
+import { socket } from "../api/commonApis";
 import { FaImage } from "react-icons/fa6";
 import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-import StoriesComponent from "../components/Stories";
 
 const Home = () => {
   const [posts, setPosts] = useState<IPost[]>([]);
   const [text, setText] = useState("");
   const [displayLikePopup, setDisplayLikePopup] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [res, setRes] = useState({});
-  const navigate = useNavigate();
-  const userId = localStorage.getItem("userId"); 
-
   const handleSelectFile = (e) => setFile(e.target.files[0]);
+  const navigate = useNavigate();
+
 
   useEffect(() => {
-    api.get("/post/all")
+    api
+      .get("/post/all")
       .then((res) => setPosts(res.data))
-      .catch(() => toast.error("Failed to load posts"));
+      .catch(() => alert("Failed to load posts"));
 
+    // ✅ Subscribe to post like updates
     socket.on("post_liked", ({ postId, likes }) => {
       setPosts((prevPosts) =>
         prevPosts.map((post) =>
@@ -36,12 +35,11 @@ const Home = () => {
       );
     });
 
-    
-
     return () => {
-      socket.off("post_liked");
+      socket.off("post_liked"); // 🔁 clean up listener
     };
   }, []);
+
 
 
   const handlePost = async () => {
@@ -51,14 +49,14 @@ const Home = () => {
       setPosts([res.data, ...posts]);
       setText("");
     } catch {
-      toast.error("Failed to create post");
+      alert("Failed to create post");
     }
   };
 
 const handleUpload = async () => {
   // Prevent submission if there's no text. The image is optional.
   if (!text) {
-    toast.error("Post text cannot be empty.");
+    alert("Post text cannot be empty.");
     return;
   }
 
@@ -71,31 +69,33 @@ const handleUpload = async () => {
     // 2. Append the text data. The key 'text' must match req.body.text.
     formData.append("text", text);
 
-  const handleUpload = async () => {
-    if (!text) {
-      alert("Post text cannot be empty.");
-      return;
+    // 3. Append the file IF it exists.
+    // The key 'image' MUST match upload.single('image') in your backend route.
+    if (file) {
+      formData.append("image", file);
     }
-
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("text", text);
-      if (file) {
-        formData.append("image", file);
-      }
 
     // 4. Retrieve the auth token
     // Replace this with your actual token retrieval logic (from context, localStorage, etc.)
     const token = localStorage.getItem("token"); 
     if (!token) {
-        toast.error("You are not logged in.");
-      const token = localStorage.getItem("token");
-      if (!token) {
         alert("You are not logged in.");
         setLoading(false);
         return;
+    }
+
+    // 5. Make the POST request to the correct endpoint with headers
+    // The endpoint should be your new combined endpoint, not "/upload"
+    const response = await axios.post(
+      "http://localhost:3000/api/post/add", // <-- CORRECT ENDPOINT
+      formData, 
+      {
+        headers: {
+          // The browser will set 'Content-Type': 'multipart/form-data' automatically with FormData
+          'Authorization': `Bearer ${token}` // <-- ADD AUTH TOKEN
+        },
       }
+    );
 
     // On success, you get the new post data back
     console.log("Post created successfully:", response.data);
@@ -105,32 +105,11 @@ const handleUpload = async () => {
     // Better error handling
     const errorMessage = error.response?.data?.message || error.message;
     console.error("Error creating post:", errorMessage);
-    toast.error(`Error: ${errorMessage}`);
+    alert(`Error: ${errorMessage}`);
   } finally {
     setLoading(false);
   }
 };
-      const response = await axios.post(
-        "http://localhost:3000/api/post/add",
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Post created successfully:", response.data);
-      setRes(response.data);
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message;
-      console.error("Error creating post:", errorMessage);
-      alert(`Error: ${errorMessage}`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
     const loginTime = localStorage.getItem("loginTime");
     if (loginTime) {
@@ -142,24 +121,19 @@ const handleUpload = async () => {
         localStorage.removeItem("token");
         localStorage.removeItem("loginTime");
         handleLogout();
-        toast.info("Session expired. Please log in again.");
+        alert("Session expired. Please log in again.");
       }
     }
   }, []);
-
   function handleLogout() {
     localStorage.removeItem("token");
     localStorage.removeItem("loginTime");
     navigate("/");
   }
 
-  const handleLike = async (postId: string,userId:string) => {
+  const handleLike = async (postId: string) => {
     try {
-
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      await likeOrUnlikePost(postId, user._id);
-      const data={recipient:userId,type:"like_post"}
-      createLikeNotification(data,localStorage.getItem("token")||'')
+      await likeOrUnlikePost(postId);
     } catch (error) {
       console.log("error");
     }
@@ -168,7 +142,6 @@ const handleUpload = async () => {
   const displayLikes = () => {
     setDisplayLikePopup(!displayLikePopup);
   };
-
   return (
     <>
       <div className="flex">
@@ -176,20 +149,20 @@ const handleUpload = async () => {
         <main className="flex-1 lg:ml-64 xl:mr-64 overflow-y-auto h-screen p-4 bg-gray-100">
           <div className="max-w-2xl mx-auto">
             {/* Stories */}
-            {/* <div className="bg-white rounded-xl shadow p-4 mb-6">
+            <div className="bg-white rounded-xl shadow p-4 mb-6">
               <h2 className="text-xl font-bold mb-4">Stories</h2>
               <div className="flex space-x-4 overflow-x-auto">
                 {[1, 2, 3].map((story, i) => (
                   <div
                     key={i}
-                    className="rounded-full bg-gradient-to-tr from-purple-400 to-blue-800 w-24 h-24 items-center justify-center text-white font-semibold text-sm flex items-center justify-center"
+                    className="rounded-full bg-gradient-to-tr from-purple-400 to-blue-800 w-24 h-24 items-center justify-center text-white font-semibold text-sm"
                   >
                     Story{story}
                   </div>
                 ))}
               </div>
-            </div> */}
-<StoriesComponent/>
+            </div>
+
             {/* Create Post */}
             <div className="bg-white rounded-xl shadow p-4 mb-4">
               <textarea
@@ -240,49 +213,45 @@ const handleUpload = async () => {
 
             {/* Posts */}
             {posts.map((post) => (
-              <div
-                className="bg-white rounded-xl shadow p-4 mb-6 relative"
-                key={post._id}
-              >
-                <div className="font-bold text-lg text-gray-800">
-                  {post.user.name}
-                  <p className="mt-2 text-gray-700 font-semibold">
-                    {post.text}
-                  </p>
-                  {post.image && (
-                    <img
-                      src={post.image}
-                      className="mt-3 rounded-lg max-h-96 w-full object-cover"
-                    />
-                  )}
-                  <div className="text-sm text-gray-400 mt-2">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="flex gap-6 items-center mt-4 text-sm font-medium">
-                    <div className="flex items-center gap-1">
-                      <button onClick={() => handleLike(post._id)}>👍</button>
-                      <span
-                        className="cursor-pointer text-gray-600"
-                        onClick={displayLikes}
-                      >
-                        {post.likes.length}{" "}
-                        {post.likes.length === 1 ? "Like" : "likes"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </main>
+  <div className="bg-white rounded-xl shadow p-4 mb-6 relative" key={post._id}>
 
-        <div >
-          {userId && <RightSidebar userId={userId} />}
+    {/* Post content */}
+    <div className="font-bold text-lg text-gray-800">
+      {post.user.name}
+      <p className="mt-2 text-gray-700 font-semibold">{post.text}</p>
+      {post.image && (
+        <img
+          src={post.image}
+          
+          className="mt-3 rounded-lg max-h-96 w-full object-cover"
+        />
+      )}
+      <div className="text-sm text-gray-400 mt-2">
+        {new Date(post.createdAt).toLocaleDateString()}
+      </div>
+      <div className="flex gap-6 items-center mt-4 text-sm font-medium">
+        <div className="flex items-center gap-1">
+          <button onClick={() => handleLike(post._id)}>👍</button>
+          <span
+            className="cursor-pointer text-gray-600"
+            onClick={displayLikes}
+          >
+            {post.likes.length} {post.likes.length === 1 ? "Like" : "likes"}
+          </span>
         </div>
       </div>
-      <ToastContainer position="top-right" autoClose={3000} />
+    </div>
+  </div>
+))}
+
+          </div>
+        </main>
+        <RightSidebar />
+      </div>
     </>
   );
 };
 
 export default Home;
+
+//improvisation -> like , comment option , ui improvement, post image and video upload
