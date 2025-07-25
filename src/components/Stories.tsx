@@ -99,7 +99,7 @@ const StoriesComponent: FC = () => {
     try {
       setIsLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/friends`, {
+      const response = await fetch(`${API_BASE_URL}/all`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -108,21 +108,38 @@ const StoriesComponent: FC = () => {
       
       if (!response.ok) throw new Error('Failed to fetch stories');
       
-      // Use the updated ApiStory type to correctly type the response data
-      const data: { unwatched: ApiStory[], watched: ApiStory[] } = await response.json();
+      // 1. Correctly type the response as an array of ApiStory
+      const apiStories: ApiStory[] = await response.json();
       
-      // The transformation function handles the mapping
-      setStories({
-        unwatched: data.unwatched.map(transformApiStory),
-        watched: data.watched.map(transformApiStory)
-      });
+      // 2. Categorize stories into 'unwatched' and 'watched' on the client side
+      //    We'll use `reduce` for a clean implementation.
+      const categorizedStories = apiStories.reduce<StoriesState>((acc, apiStory) => {
+        // First, transform the story from the API format to the component's format
+        const story = transformApiStory(apiStory);
+
+        // Check if the current user has already viewed this story
+        const isWatched = story.viewers.includes(currentUser.id);
+
+        if (isWatched) {
+          acc.watched.push(story);
+        } else {
+          acc.unwatched.push(story);
+        }
+
+        return acc;
+      }, { unwatched: [], watched: [] }); // Initial value for the accumulator
+
+      // 3. Set the state with the correctly categorized stories
+      setStories(categorizedStories);
+
     } catch (error) {
       console.error('Error fetching stories:', error);
+      // It's good practice to clear the stories on error to avoid showing stale data
+      setStories({ unwatched: [], watched: [] });
     } finally {
       setIsLoading(false);
     }
   };
-
 
   useEffect(() => {
     fetchStories();
