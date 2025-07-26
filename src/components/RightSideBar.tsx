@@ -66,7 +66,7 @@ const RightSidebar = ({ userId }: Props) => {
                   </div>
 
                   <Link
-                    to={`/profile/${mf._id}`}
+                    to={`/profile/${mf.email}`}
                     className="text-sm text-gray-200 font-semibold hover:underline"
                   >
                     View

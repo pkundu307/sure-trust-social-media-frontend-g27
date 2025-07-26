@@ -38,11 +38,10 @@ const Navbar = () => {
             <Link to="/home" className="text-indigo-600 font-bold text-xl">
               Buddies
             </Link>
-            <div className="hidden sm:block">
-              <div className="bg-gray-100 flex items-center px-3 py-1 rounded-full w-60">
-                <Search />
-              </div>
+            <div className="hidden sm:block"> 
+              <Search />
             </div>
+
           </div>
 
           {/* Center: Navigation Icons */}
