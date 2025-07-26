@@ -9,6 +9,7 @@ import { FaTrashAlt } from "react-icons/fa";
 import { socket } from "../socket";
 import LeftSidebar from "../components/LeftSidebar";
 import RightSidebar from "../components/RightSideBar";
+import axios from "axios";
  // ✅ use shared socket
 
 const Profile = () => {
@@ -18,6 +19,7 @@ const Profile = () => {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [posts, setPosts] = useState<IPost[]>([]);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [newName, setNewName] = useState("");
@@ -26,7 +28,7 @@ const Profile = () => {
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [profilePic, setProfilePic] = useState<string | null>(null);
-
+const formData = new FormData();
   const getNavLinkClass = ({ isActive }: { isActive: boolean }) => {
     const base = "flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-200";
     const hover = "hover:bg-red-400";
@@ -42,6 +44,7 @@ const Profile = () => {
       setUser(res.data);
       setNewName(res.data.name || "");
       setNewBio(res.data.bio || "");
+      setProfilePic(res.data.profilePicture?.url||"")
     }).catch((err) => {
       console.error(err);
       alert("Failed to fetch user data");
@@ -50,7 +53,9 @@ const Profile = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+          localStorage.setItem("pp",profilePic||"")
+
+  },[profilePic] );
 
   // ✅ Listen for live like events
   useEffect(() => {
@@ -86,14 +91,37 @@ const Profile = () => {
     }
   }
 
-  const handleProfilePicChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleProfilePicChange =async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => setProfilePic(reader.result as string);
       reader.readAsDataURL(file);
+      setFile(file)
+
+
     }
   };
+const updatePP = async () => {
+    // formData is likely defined outside this function and being reused
+    const token = localStorage.getItem("token");
+    if (file) {
+        formData.append("image", file); // Appending to an existing object
+    }
+        const response = await axios.put(
+          "http://localhost:3000/api/user/me/profile-pic",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+        console.log(response);
+        
+      
+}
+
 
   return user ? (
         <div className="flex">
@@ -107,7 +135,7 @@ const Profile = () => {
             {/* Profile Picture with edit */}
             <div className="relative w-[120px] h-[120px]">
               <img
-                src={profilePic || "/default-profile.png"}
+                src={profilePic||""}
                 alt="Profile"
                 className="w-full h-full object-cover rounded-full border-4 border-gray-300 shadow"
               />
@@ -133,6 +161,7 @@ const Profile = () => {
               >
                 ✏️ Edit
               </button>
+              <button onClick={updatePP}>update</button>
             </div>
           </div>
           <div>

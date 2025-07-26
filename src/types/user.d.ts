@@ -1,5 +1,8 @@
 //here d stands for dto
-
+interface profilePicture{
+  url:string;
+  public_id:string;
+}
 export interface User {
   id: string;
   name: string;
@@ -13,5 +16,5 @@ export interface IUser{
   name: string;
   email: string;
   bio?: string;
-  profilePicture?: string;
+  profilePicture?: profilePicture;
 }

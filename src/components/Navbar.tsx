@@ -26,7 +26,8 @@ const Navbar = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("loginTime");
-    navigate("/login");
+    setIsProfileOpen(false)
+    navigate("/");
   };
 
   return (
@@ -54,7 +55,7 @@ const Navbar = () => {
               <FiBell size={22} />
             </Link>
             <Link to="/friends" className="text-gray-600 hover:text-indigo-600">
-              <FiUser size={22} />
+              <img src={localStorage.getItem("PP")||""}/>
             </Link>
           </div>
 
