@@ -27,11 +27,14 @@ interface ApiUser {
   email: string;
   // The API user object might have an avatar, but in the example it doesn't.
   // We make it optional to handle both cases.
-  avatar?: string;
+  avatar?: profilePicture;
   // We don't need to define other fields like password, followers etc.
 }
 
 // Type for the raw Story object from the API
+interface profilePicture{
+  url:string;
+}
 interface ApiStory {
   _id: string;
   user: ApiUser;
@@ -39,6 +42,7 @@ interface ApiStory {
   viewers: string[];
   createdAt: string;
   isActive: boolean;
+  profilePicture:profilePicture;
 }
 
 interface StoriesState {
@@ -90,7 +94,7 @@ const StoriesComponent: FC = () => {
       user: {
         id: apiStory.user._id, // Map '_id' from API to 'id'
         name: apiStory.user.name,
-        avatar: apiStory.user.avatar || defaultAvatar, // Use API avatar if present, otherwise use default
+        avatar: apiStory.user.profilePicture.url || defaultAvatar, // Use API avatar if present, otherwise use default
       }
     };
   };
