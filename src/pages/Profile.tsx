@@ -38,9 +38,9 @@ const formData = new FormData();
   };
 
   const fetchData = () => {
-    api.get("/post/allofme").then((res) => setPosts(res.data)).catch(() => alert("Failed to load posts"));
-    api.get("friendRequest/allfriends").then((res) => setFriends(res.data)).catch(() => alert("Failed to load friends"));
-    api.get("/user/me").then((res) => {
+    api.get("/api/post/allofme").then((res) => setPosts(res.data)).catch(() => alert("Failed to load posts"));
+    api.get("/api/friendRequest/allfriends").then((res) => setFriends(res.data)).catch(() => alert("Failed to load friends"));
+    api.get("/api/user/me").then((res) => {
       setUser(res.data);
       setNewName(res.data.name || "");
       setNewBio(res.data.bio || "");
@@ -109,7 +109,7 @@ const updatePP = async () => {
         formData.append("image", file); // Appending to an existing object
     }
         const response = await axios.put(
-          "http://localhost:3000/api/user/me/profile-pic",
+          `${import.meta.env.VITE_BASE_URL}/api/user/me/profile-pic`,
           formData,
           {
             headers: {

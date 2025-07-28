@@ -43,12 +43,12 @@ const handleAccept = async (requestId: string, fromUserId: string) => {
 
   const fetchData = () => {
     api
-      .get("/friendRequest/all")
+      .get("/api/friendRequest/all")
       .then((res) => setFriendRequests(res.data))
       .catch(() => alert("Failed to load friend requests"));
 
     api
-      .get("friendRequest/allfriends")
+      .get("/api/friendRequest/allfriends")
       .then((res) => setFriends(res.data))
       .catch(() => alert("Failed to load friends"));
   };

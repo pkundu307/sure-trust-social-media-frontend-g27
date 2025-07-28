@@ -18,7 +18,7 @@ const[profile,setProfile] = useState<Profile | null>(null);
 
 const handleFriendSearch = async () => {
     try {
-        const res = await api.get(`/friends/search-friends?name=${query}`);
+        const res = await api.get(`/api/friends/search-friends?name=${query}`);
         setFriends(res.data);
     } catch (error) {
         alert( error);

@@ -15,7 +15,7 @@ interface Message {
   createdAt: string;
 }
 
-const socket: Socket = io("http://localhost:3000");
+const socket: Socket = io(`${import.meta.env.VITE_BASE_URL}`);
 
 const ChatWindow = ({ onClose }: { onClose: () => void }) => {
   const [friends, setFriends] = useState<any[]>([]);
@@ -35,7 +35,7 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
 
   // --- EFFECT 1: One-time setup for friends list and socket connection ---
   useEffect(() => {
-    api.get("/friendRequest/allfriends")
+    api.get("/api/friendRequest/allfriends")
       .then((res) => setFriends(res.data))
       .catch(() => alert("Failed to load friends"));
 
@@ -65,7 +65,7 @@ const ChatWindow = ({ onClose }: { onClose: () => void }) => {
       setIsLoading(true); // Show loading state for messages
       setMessages([]); // Clear previous messages
 
-      api.get(`/chat/${selectedUser._id}`)
+      api.get(`/api/chat/${selectedUser._id}`)
         .then((res) => {
           setMessages(res.data);
         })

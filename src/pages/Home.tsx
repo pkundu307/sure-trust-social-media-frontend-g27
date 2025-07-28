@@ -22,7 +22,7 @@ const Home = () => {
   const handleSelectFile = (e) => setFile(e.target.files[0]);
 
   useEffect(() => {
-    api.get("/post/all")
+    api.get("/api/post/all")
       .then((res) => setPosts(res.data))
       .catch(() => alert("Failed to load posts"));
 
@@ -63,7 +63,7 @@ const Home = () => {
       }
 
       const response = await axios.post(
-        "http://localhost:3000/api/post/add",
+        `${import.meta.env.VITE_BASE_URL}/api/post/add`,
         formData,
         {
           headers: {

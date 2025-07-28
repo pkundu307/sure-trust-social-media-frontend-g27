@@ -2,7 +2,7 @@ import { api } from "./axios";
 import { io } from "socket.io-client";
 
 // ✅ Socket instance
-export const socket = io("http://localhost:3000", {
+export const socket = io(`${import.meta.env.VITE_BASE_URL}`, {
   withCredentials: true,
 });
 // utils/api/notification.ts
@@ -18,7 +18,7 @@ export const createNotification = async (
   data: NotificationData,
   token: string
 ) => {
-  await axios.post("http://localhost:5000/api/notifications", data, {
+  await axios.post(`${import.meta.env.VITE_BASE_URL}/api/notifications`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -77,7 +77,7 @@ const StoriesComponent: FC = () => {
   
   const [viewingStory, setViewingStory] = useState<Story | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const API_BASE_URL = 'http://localhost:3000/api/story';
+  const API_BASE_URL = `${import.meta.env.VITE_BASE_URL}/api/story`;
 
   // --- *** UPDATED TRANSFORMATION FUNCTION *** ---
   // This function acts as an adapter between the API data and the component's state

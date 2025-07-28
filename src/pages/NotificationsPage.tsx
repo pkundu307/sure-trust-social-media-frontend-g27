@@ -8,7 +8,7 @@ import { api } from "../api/axios.ts";
 const Notifications: React.FC = () => {
   const[notifications,setNotifications] = useState<NotificationType[]>([]);
   useEffect(() => {
-api.get("/notification/getall").then((res) => setNotifications(res.data))
+api.get("/api/notification/getall").then((res) => setNotifications(res.data))
   
 },[])
   console.log(notifications,'lololo');
