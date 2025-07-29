@@ -9,7 +9,7 @@ const DeletedPosts = () => {
 
   useEffect(() => {
     api
-      .get("/post/deleted")
+      .get("/api/post/deleted")
       .then((res) => setDeletedPosts(res.data))
       .catch(() => alert("Failed to load deleted posts"));
   }, []);

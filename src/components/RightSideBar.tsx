@@ -20,7 +20,7 @@ const RightSidebar = ({ userId }: Props) => {
   const fetchMutualFriends = async () => {
     setLoading(true);
     try {
-      const response = await api.get("/friendRequest/mutual", {
+      const response = await api.get("/api/friendRequest/mutual", {
         params: { targetId: userId },
       });
       setMutuals(response.data);

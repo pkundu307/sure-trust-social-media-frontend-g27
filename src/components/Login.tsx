@@ -57,7 +57,7 @@ const Login = () => {
       return;
     }
     try {
-      await api.post('/auth/register', {
+      await api.post('/api/auth/register', {
         name: signupName,
         email: signupEmail,
         password: signupPassword,

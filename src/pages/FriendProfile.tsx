@@ -70,7 +70,7 @@ const FriendProfile = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.get<IProfileApiResponse>(`/friends/profile-by-email?email=${id}`);
+        const res = await api.get<IProfileApiResponse>(`/api/friends/profile-by-email?email=${id}`);
         setProfileData(res.data);
       } catch (err) {
         console.error(err);
@@ -105,7 +105,7 @@ const FriendProfile = () => {
         {/* --- Profile Header --- */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-8 flex flex-col md:flex-row items-center gap-6">
           <img
-src={user.profilePicture?.url || ""}
+            src={user.profilePicture?.url || ''}
             alt={`Profile of ${user.name}`}
             className="w-32 h-32 md:w-40 md:h-40 object-cover rounded-full border-4 border-rose-500 shadow-lg"
           />
