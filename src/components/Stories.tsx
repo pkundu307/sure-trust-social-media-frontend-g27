@@ -24,17 +24,16 @@ interface Story {
 interface ApiUser {
   _id: string;
   name: string;
-  email: string;
-  // The API user object might have an avatar, but in the example it doesn't.
-  // We make it optional to handle both cases.
-  avatar?: profilePicture;
-  // We don't need to define other fields like password, followers etc.
+  email?: string;
+  // The API user object doesn't have avatar directly
+}
+
+// Type for profile picture from API
+interface ProfilePicture {
+  url: string;
 }
 
 // Type for the raw Story object from the API
-interface profilePicture{
-  url:string;
-}
 interface ApiStory {
   _id: string;
   user: ApiUser;
@@ -42,7 +41,7 @@ interface ApiStory {
   viewers: string[];
   createdAt: string;
   isActive: boolean;
-  profilePicture:profilePicture;
+  profilePicture?: ProfilePicture; // Optional since it might not always be present
 }
 
 interface StoriesState {
@@ -57,7 +56,6 @@ interface StoryCircleProps {
   onStoryClick: (story: Story) => void;
   onUploadClick: () => void;
 }
-
 
 const StoriesComponent: FC = () => {
   const [stories, setStories] = useState<StoriesState>({
@@ -79,22 +77,24 @@ const StoriesComponent: FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const API_BASE_URL = `${import.meta.env.VITE_BASE_URL}/api/story`;
 
-  // --- *** UPDATED TRANSFORMATION FUNCTION *** ---
-  // This function acts as an adapter between the API data and the component's state
+  // --- FIXED TRANSFORMATION FUNCTION ---
   const transformApiStory = (apiStory: ApiStory): Story => {
-    // Since the API user object does not provide an avatar, we use a placeholder.
+    // Default avatar fallback
     const defaultAvatar = 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop&crop=face';
+    
+    // Get avatar from profilePicture field at story level, or use default
+    const avatarUrl = apiStory.profilePicture?.url || defaultAvatar;
     
     return {
       id: apiStory._id,
       mediaUrl: apiStory.image, // Map 'image' from API to 'mediaUrl' for the component
-      mediaType: 'image',      // Assume 'image' since API doesn't specify
+      mediaType: 'image', // Assume 'image' since API doesn't specify type
       viewers: apiStory.viewers,
       createdAt: new Date(apiStory.createdAt),
       user: {
         id: apiStory.user._id, // Map '_id' from API to 'id'
         name: apiStory.user.name,
-        avatar: apiStory.user.profilePicture.url || defaultAvatar, // Use API avatar if present, otherwise use default
+        avatar: avatarUrl, // Use the profilePicture from story level
       }
     };
   };
@@ -116,7 +116,6 @@ const StoriesComponent: FC = () => {
       const apiStories: ApiStory[] = await response.json();
       
       // 2. Categorize stories into 'unwatched' and 'watched' on the client side
-      //    We'll use `reduce` for a clean implementation.
       const categorizedStories = apiStories.reduce<StoriesState>((acc, apiStory) => {
         // First, transform the story from the API format to the component's format
         const story = transformApiStory(apiStory);
@@ -131,14 +130,13 @@ const StoriesComponent: FC = () => {
         }
 
         return acc;
-      }, { unwatched: [], watched: [] }); // Initial value for the accumulator
+      }, { unwatched: [], watched: [] });
 
       // 3. Set the state with the correctly categorized stories
       setStories(categorizedStories);
 
     } catch (error) {
       console.error('Error fetching stories:', error);
-      // It's good practice to clear the stories on error to avoid showing stale data
       setStories({ unwatched: [], watched: [] });
     } finally {
       setIsLoading(false);
@@ -231,8 +229,6 @@ const StoriesComponent: FC = () => {
     return `${Math.floor(diffInMinutes / 1440)}d`;
   };
 
-  // --- The rest of the component remains unchanged as it uses the correctly transformed data ---
-
   const StoryCircle: FC<StoryCircleProps> = ({ story, isUpload = false, isWatched = false, onStoryClick, onUploadClick }) => {
     const borderClass = isUpload 
       ? 'border-2 border-dashed border-gray-300 hover:border-blue-400' 
@@ -249,10 +245,21 @@ const StoriesComponent: FC = () => {
       <div className="flex flex-col items-center space-y-2 min-w-20">
         <div className={`relative w-20 h-20 rounded-full cursor-pointer transition-all duration-300 hover:scale-105 ${borderClass}`} onClick={handleClick}>
           {isUpload ? (
-            <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center"><Plus className="w-6 h-6 text-gray-400" /></div>
+            <div className="w-full h-full rounded-full bg-gray-50 flex items-center justify-center">
+              <Plus className="w-6 h-6 text-gray-400" />
+            </div>
           ) : story ? (
             <div className="w-full h-full rounded-full overflow-hidden bg-white">
-              <img src={story.user.avatar} alt={story.user.name} className="w-full h-full object-cover" />
+              <img 
+                src={story.user.avatar} 
+                alt={story.user.name} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  // Fallback to default avatar if image fails to load
+                  const target = e.target as HTMLImageElement;
+                  target.src = 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop&crop=face';
+                }}
+              />
               {!isWatched && <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-full" />}
             </div>
           ) : null}
@@ -262,8 +269,12 @@ const StoriesComponent: FC = () => {
             </div>
           )}
         </div>
-        <span className="text-xs text-gray-600 text-center max-w-16 truncate">{isUpload ? 'Your Story' : story?.user.name}</span>
-        {!isUpload && story && (<span className="text-xs text-gray-400">{getTimeAgo(story.createdAt)}</span>)}
+        <span className="text-xs text-gray-600 text-center max-w-16 truncate">
+          {isUpload ? 'Your Story' : story?.user.name}
+        </span>
+        {!isUpload && story && (
+          <span className="text-xs text-gray-400">{getTimeAgo(story.createdAt)}</span>
+        )}
       </div>
     );
   };
@@ -274,13 +285,25 @@ const StoriesComponent: FC = () => {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" onClick={() => setViewingStory(null)}>
             <div className="relative w-full max-w-md h-[80vh] bg-black rounded-2xl overflow-hidden shadow-2xl" onClick={e => e.stopPropagation()}>
-                <div className="absolute top-2 left-2 right-2 h-1 bg-white/20 rounded-full overflow-hidden"><div className="h-full bg-white animate-progress"></div></div>
+                <div className="absolute top-2 left-2 right-2 h-1 bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white animate-progress"></div>
+                </div>
                 <div className="absolute top-5 left-4 flex items-center space-x-3 z-10">
-                    <img src={viewingStory.user.avatar} alt={viewingStory.user.name} className="w-10 h-10 rounded-full border-2 border-white"/>
+                    <img 
+                      src={viewingStory.user.avatar} 
+                      alt={viewingStory.user.name} 
+                      className="w-10 h-10 rounded-full border-2 border-white"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.src = 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop&crop=face';
+                      }}
+                    />
                     <span className="text-white font-semibold">{viewingStory.user.name}</span>
                     <span className="text-white/70 text-sm">{getTimeAgo(viewingStory.createdAt)}</span>
                 </div>
-                <button onClick={() => setViewingStory(null)} className="absolute top-5 right-4 text-white/80 hover:text-white z-10"><X size={28} /></button>
+                <button onClick={() => setViewingStory(null)} className="absolute top-5 right-4 text-white/80 hover:text-white z-10">
+                  <X size={28} />
+                </button>
                 {viewingStory.mediaType === 'image' ? (
                     <img src={viewingStory.mediaUrl} alt="Story" className="w-full h-full object-cover"/>
                 ) : (
@@ -296,13 +319,23 @@ const StoriesComponent: FC = () => {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold text-gray-800">Stories</h2>
         <div className="flex items-center space-x-4">
-          <button onClick={fetchStories} disabled={isLoading} className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors">
+          <button 
+            onClick={fetchStories} 
+            disabled={isLoading} 
+            className="flex items-center space-x-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+          >
             <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </button>
           <div className="flex items-center space-x-4 text-sm text-gray-500">
-            <div className="flex items-center space-x-1"><div className="w-2 h-2 bg-blue-500 rounded-full"></div><span>New</span></div>
-            <div className="flex items-center space-x-1"><Eye className="w-4 h-4" /><span>Watched</span></div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span>New</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <Eye className="w-4 h-4" />
+              <span>Watched</span>
+            </div>
           </div>
         </div>
       </div>
@@ -311,38 +344,102 @@ const StoriesComponent: FC = () => {
         {isLoading ? (
           <div className="flex space-x-6 overflow-x-auto pb-4">
             {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex flex-col items-center space-y-2 min-w-20"><div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse"></div><div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div><div className="w-8 h-2 bg-gray-200 rounded animate-pulse"></div></div>
+              <div key={i} className="flex flex-col items-center space-y-2 min-w-20">
+                <div className="w-20 h-20 rounded-full bg-gray-200 animate-pulse"></div>
+                <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-8 h-2 bg-gray-200 rounded animate-pulse"></div>
+              </div>
             ))}
           </div>
         ) : (
           <div className="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide">
-            <StoryCircle isUpload={true} onUploadClick={() => fileInputRef.current?.click()} onStoryClick={()=>{}} />
-            {stories.unwatched.map((story) => <StoryCircle key={story.id} story={story} isWatched={false} onStoryClick={handleStoryClick} onUploadClick={()=>{}} />)}
-            {stories.watched.map((story) => <StoryCircle key={story.id} story={story} isWatched={true} onStoryClick={handleStoryClick} onUploadClick={()=>{}} />)}
+            <StoryCircle 
+              isUpload={true} 
+              onUploadClick={() => fileInputRef.current?.click()} 
+              onStoryClick={() => {}} 
+            />
+            {stories.unwatched.map((story) => (
+              <StoryCircle 
+                key={story.id} 
+                story={story} 
+                isWatched={false} 
+                onStoryClick={handleStoryClick} 
+                onUploadClick={() => {}} 
+              />
+            ))}
+            {stories.watched.map((story) => (
+              <StoryCircle 
+                key={story.id} 
+                story={story} 
+                isWatched={true} 
+                onStoryClick={handleStoryClick} 
+                onUploadClick={() => {}} 
+              />
+            ))}
           </div>
         )}
         <div className="absolute right-0 top-0 bottom-0 w-12 bg-gradient-to-l from-white to-transparent pointer-events-none"></div>
       </div>
 
       <div className="mt-6 flex items-center justify-between text-sm text-gray-500 bg-gray-50 rounded-lg p-4">
-        <div className="flex items-center space-x-2"><Users className="w-4 h-4" /><span>{stories.unwatched.length} new stories</span></div>
-        <div className="flex items-center space-x-2"><Clock className="w-4 h-4" /><span>{stories.watched.length} watched today</span></div>
+        <div className="flex items-center space-x-2">
+          <Users className="w-4 h-4" />
+          <span>{stories.unwatched.length} new stories</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Clock className="w-4 h-4" />
+          <span>{stories.watched.length} watched today</span>
+        </div>
       </div>
 
-      <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileSelect} className="hidden" />
+      <input 
+        ref={fileInputRef} 
+        type="file" 
+        accept="image/*,video/*" 
+        onChange={handleFileSelect} 
+        className="hidden" 
+      />
 
       {showUploadModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold">Upload Story</h3>
-              <button onClick={() => setShowUploadModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
+              <button 
+                onClick={() => setShowUploadModal(false)} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
             </div>
-            {previewUrl && <div className="mb-4"><img src={previewUrl} alt="Preview" className="w-full h-64 object-cover rounded-lg"/></div>}
+            {previewUrl && (
+              <div className="mb-4">
+                <img src={previewUrl} alt="Preview" className="w-full h-64 object-cover rounded-lg"/>
+              </div>
+            )}
             <div className="flex space-x-3">
-              <button onClick={() => setShowUploadModal(false)} className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={handleUpload} disabled={isUploading} className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 flex items-center justify-center space-x-2">
-                {isUploading ? (<><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div><span>Uploading...</span></>) : (<><Camera className="w-4 h-4" /><span>Share Story</span></>)}
+              <button 
+                onClick={() => setShowUploadModal(false)} 
+                className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleUpload} 
+                disabled={isUploading} 
+                className="flex-1 py-2 px-4 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 flex items-center justify-center space-x-2"
+              >
+                {isUploading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="w-4 h-4" />
+                    <span>Share Story</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
