@@ -64,7 +64,7 @@ const Post: React.FC<PostProps> = ({ post, currentUser, setPosts }) => {
       }
 
       await axios.post(
-        `http://localhost:3000/api/post/comment/${postId}`,
+        `${import.meta.env.VITE_BASE_URL}/api/post/comment/${postId}`,
         { text: commentContent },
         {
           headers: {

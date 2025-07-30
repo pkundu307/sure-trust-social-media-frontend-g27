@@ -17,7 +17,7 @@ const Login = () => {
   const fetchUserId = async (token: string) => {
     if (!token) return null;
     try {
-      const res = await api.get('/user/me', {
+      const res = await api.get('/api/user/me', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userId = res.data._id;

@@ -13,7 +13,7 @@ const handleAccept = async (requestId: string, fromUserId: string) => {
   try {
     const token = localStorage.getItem("token") || "";
 
-    const res = await api.put(`/friendRequest/accept/${requestId}`, {}, {
+    const res = await api.put(`/api/friendRequest/accept/${requestId}`, {}, {
       headers: {
         Authorization: `Bearer ${token}`,
       }

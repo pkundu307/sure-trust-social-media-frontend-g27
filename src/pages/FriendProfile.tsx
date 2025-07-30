@@ -55,6 +55,7 @@ const FriendProfile = () => {
   const [profileData, setProfileData] = useState<IProfileApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [requestSending, setRequestSending] = useState<boolean>(false);
 
   // A placeholder for the current logged-in user's ID
   const currentUserId = localStorage.getItem("userId");
@@ -82,6 +83,44 @@ const FriendProfile = () => {
 
     fetchFriendProfile();
   }, [id]); // Re-fetch if the email in the URL changes
+
+  // Send friend request function
+  
+  const handleSendFriendRequest = async () => {
+    if (!profileData?.user._id ) {
+      console.error('Missing user IDs');
+      return;
+    }
+  console.log(profileData?.user._id);
+
+    setRequestSending(true);
+    try {
+      const response = await api.post(`/api/friendRequest/send`, {
+        to: profileData.user._id
+      });
+      
+      // Handle success - you might want to show a success message
+      console.log('Friend request sent successfully:', response.data);
+      
+      // Optional: You could update the UI to show "Request Sent" or similar
+      // For now, we'll just log it
+      alert('Friend request sent successfully!');
+      
+    } catch (err: any) {
+      console.error('Error sending friend request:', err);
+      
+      // Handle different error scenarios
+      if (err.response?.status === 400) {
+        alert('Friend request already sent or you are already friends');
+      } else if (err.response?.status === 404) {
+        alert('User not found');
+      } else {
+        alert('Failed to send friend request. Please try again.');
+      }
+    } finally {
+      setRequestSending(false);
+    }
+  };
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen"><p className="text-xl">Loading profile...</p></div>;
@@ -129,16 +168,15 @@ const FriendProfile = () => {
             </div>
           </div>
           <div className="mt-4 md:mt-0">
-             {/* Simple Follow/Unfollow button logic */}
+             {/* Updated Follow/Unfollow button with friend request functionality */}
             <button 
-              className={`flex items-center gap-2 px-4 py-2 font-semibold rounded-lg shadow transition-colors duration-200 ${
-                isFollowing 
-                ? 'bg-gray-300 text-gray-800 hover:bg-gray-400' 
-                : 'bg-rose-500 text-white hover:bg-rose-600'
-              }`}
+              onClick={handleSendFriendRequest}
+            
             >
-              {isFollowing ? <FaUserCheck /> : <FaUserPlus />}
-              {isFollowing ? 'Following' : 'Follow'}
+             
+                
+                  + friend request
+              
             </button>
           </div>
         </div>
