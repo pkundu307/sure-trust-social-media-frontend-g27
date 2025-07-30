@@ -27,7 +27,7 @@ export const createNotification = async (
 
 export const likeOrUnlikePost = (postId: string, userId: string) => {
   return api
-    .post(`/post/like/${postId}`)
+    .post(`/api/post/like/${postId}`)
     .then(() => {
       console.log("Post liked/unliked successfully");
 
